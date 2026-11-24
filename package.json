@@ -1,0 +1,16 @@
+{
+  "name": "aquecimento-adspower",
+  "version": "1.0.0",
+  "description": "Aquecimento autom\u00e1tico de perfis do AdsPower com personas, rod\u00edzio e dashboard",
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.js",
+    "bench": "node scripts/bench.js",
+    "mock": "node test/mock-adspower.js",
+    "report": "node scripts/report.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "playwright-core": "^1.49.1"
+  }
+}

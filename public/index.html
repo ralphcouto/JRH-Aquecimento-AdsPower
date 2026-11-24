@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aquecimento AdsPower</title>
+<style>
+:root{--bg:#f5f6f8;--card:#fff;--ink:#14171c;--mut:#6b7280;--line:#e5e7eb;--acc:#2563eb;--ok:#16a34a;--warn:#d97706;--bad:#dc2626;--chip:#eef2ff}
+@media (prefers-color-scheme:dark){:root{--bg:#0e1116;--card:#171b22;--ink:#e8eaed;--mut:#98a2b3;--line:#262c36;--acc:#5b8def;--ok:#34d399;--warn:#fbbf24;--bad:#f87171;--chip:#1e2740}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+header{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;padding:16px 24px;border-bottom:1px solid var(--line);background:var(--card);position:sticky;top:0;z-index:5}
+h1{font-size:18px;margin:0}h2{font-size:14px;margin:0 0 10px;color:var(--mut);text-transform:uppercase;letter-spacing:.04em}
+main{padding:20px 24px;display:grid;gap:16px;max-width:1500px;margin:auto}
+.grid{display:grid;gap:12px}.k{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}.two{grid-template-columns:repeat(auto-fit,minmax(420px,1fr))}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px;min-width:0}
+.kh{grid-column:1/-1;font-size:12px;color:var(--mut);text-transform:uppercase;letter-spacing:.05em;margin:6px 0 -2px;font-weight:600}.kpi b{display:block;font-size:24px;font-variant-numeric:tabular-nums}.kpi span{color:var(--mut);font-size:12px}
+button{font:inherit;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:7px 14px;border-radius:8px;cursor:pointer}
+button.p{background:var(--acc);border-color:var(--acc);color:#fff}button.d{color:var(--bad)}button:disabled{opacity:.45;cursor:default}
+.pill{display:inline-block;padding:2px 9px;border-radius:99px;font-size:12px;background:var(--chip)}
+.pill.running{background:color-mix(in srgb,var(--ok) 20%,transparent);color:var(--ok)}.pill.paused{background:color-mix(in srgb,var(--warn) 22%,transparent);color:var(--warn)}
+table{width:100%;border-collapse:collapse;font-size:13px}th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:360px}
+th{color:var(--mut);font-weight:500;font-size:12px;position:sticky;top:0;background:var(--card)}
+.scroll{max-height:380px;overflow:auto}
+.bar{height:8px;border-radius:99px;background:var(--line);overflow:hidden}.bar>i{display:block;height:100%;background:var(--acc);transition:width .6s}
+.sess{display:grid;gap:6px;padding:10px 0;border-bottom:1px solid var(--line)}.sess:last-child{border:0}
+.mut{color:var(--mut)}.ok{color:var(--ok)}.bad{color:var(--bad)}.warn{color:var(--warn)}
+.cfg{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}.cfg label{display:grid;gap:3px;font-size:12px;color:var(--mut)}
+input,select{font:inherit;padding:6px 8px;border-radius:7px;border:1px solid var(--line);background:var(--bg);color:var(--ink);width:100%}
+svg{width:100%;height:90px;display:block}
+details summary{cursor:pointer;font-weight:600}
+</style>
+</head>
+<body>
+<header>
+  <div><h1>🔥 Aquecimento de Perfis · AdsPower</h1><span class="mut" id="sub">carregando…</span></div>
+  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+    <span class="pill" id="status">parado</span>
+    <button class="p" id="bStart">▶ Iniciar rodízio</button>
+    <button id="bPause">⏸ Pausar</button>
+    <button class="d" id="bStop">⏹ Parar</button>
+    <a href="/api/export/visits.csv"><button>⬇ CSV</button></a>
+  </div>
+</header>
+<main>
+  <div class="card" id="noteCard" style="display:none"></div>
+  <div class="grid k" id="kpis"></div>
+
+  <div class="grid two">
+    <div class="card"><h2>Rodada atual</h2><div id="cycle"></div></div>
+    <div class="card"><h2>Mac · recursos</h2><div id="sys"></div><svg id="chart" viewBox="0 0 400 90" preserveAspectRatio="none"></svg><span class="mut" style="font-size:11px">CPU % (azul) · RAM disponível (verde) · últimos 12 min</span></div>
+  </div>
+
+  <div class="card"><h2>Navegando agora</h2><div id="active"><span class="mut">Nenhum perfil aberto.</span></div></div>
+
+  <div class="grid two">
+    <div class="card"><h2>Perfis (<span id="pc">0</span>)</h2><div class="scroll"><table id="tProfiles"></table></div></div>
+    <div class="card"><h2>Sites mais acessados</h2><div class="scroll"><table id="tDomains"></table></div></div>
+  </div>
+
+  <div class="grid two">
+    <div class="card"><h2>Últimas visitas</h2><div class="scroll"><table id="tRecent"></table></div></div>
+    <div class="card"><h2>Páginas puladas · motivos</h2><div id="skips"></div><h2 style="margin-top:16px">Últimas sessões</h2><div class="scroll"><table id="tSess"></table></div></div>
+  </div>
+
+  <div class="card"><details><summary>⚙ Configurações</summary><br>
+    <div class="cfg" id="cfg"></div><br>
+    <button class="p" id="bSave">Salvar</button> <button id="bTest">Testar conexão AdsPower</button> <span id="cfgMsg" class="mut"></span>
+  </details></div>
+</main>
+<script>
+const $=s=>document.querySelector(s);
+const fmtT=ms=>{ms=Math.max(0,ms);const s=Math.round(ms/1000);return s>=3600?`${Math.floor(s/3600)}h${String(Math.floor(s%3600/60)).padStart(2,'0')}`:`${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`};
+const ago=t=>{if(!t)return '—';const m=Math.round((Date.now()-t)/60000);return m<1?'agora':m<60?`${m} min atrás`:m<1440?`${Math.round(m/60)} h atrás`:`${Math.round(m/1440)} d atrás`};
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const flag=c=>c&&c.length===2?String.fromCodePoint(...[...c.toUpperCase()].map(x=>127397+x.charCodeAt(0))):'🌐';
+let S=null,R=null,cfgFilled=false;
+const api=(p,o)=>fetch(p,o).then(r=>r.json());
+const post=(p,b)=>api(p,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(b)});
+$('#bStart').onclick=async()=>{const r=await post('/api/control',{action:S?.scheduler.status==='paused'?'resume':'start'});if(r.error)alert(r.error);poll()};
+$('#bPause').onclick=()=>post('/api/control',{action:'pause'}).then(poll);
+$('#bStop').onclick=()=>confirm('Parar e fechar todos os perfis abertos?')&&post('/api/control',{action:'stop'}).then(poll);
+
+const CFG=[['adspower.baseUrl','URL da API','text','local'],['adspower.apiKey','API key (em branco = manter)','text','local'],['scheduler.concurrency','Perfis simultâneos','number'],['scheduler.ramp','Rampa progressiva (5→20 min em 7 dias)','bool'],['scheduler.sliceMinutes','Minutos por perfil (sem rampa)','number'],['scheduler.sliceJitterPct','Variação do tempo (±%)','number'],['scheduler.cpuMax','CPU máx. (%) p/ abrir novo','number'],['scheduler.memMinMB','RAM livre mín. (MB)','number'],['scheduler.startStaggerSec','Intervalo entre aberturas (s)','number'],['scheduler.pauseBetweenCyclesMin','Pausa entre rodadas (min)','number'],['scheduler.groupFilter','Filtrar grupos (vírgula)'],['scheduler.excludeIds','Excluir IDs (vírgula)'],['browsing.minPageSec','Tempo mín. por página (s)','number'],['browsing.maxPageSec','Tempo máx. por página (s)','number'],['browsing.searchRatio','Chance de busca (0–1)','number'],['browsing.youtubeRatio','Chance de YouTube (0–1)','number'],['browsing.facebookRatio','Chance de feed Facebook (0–1)','number'],['browsing.niche','Nicho (categorias)'],['browsing.acceptCookies','Aceitar cookies (desmarcado = só recusa)','bool'],['scheduler.adaptive','Limitar por CPU/RAM','bool'],['scheduler.headless','Modo headless','bool']];
+const get=(o,p)=>p.split('.').reduce((a,k)=>a?.[k],o);
+function fillCfg(c){
+  $('#cfg').innerHTML=CFG.filter(([p,l,t,loc])=>!loc||S.isLocal).map(([p,l,t])=>t==='bool'?`<label>${l}<select data-p="${p}"><option value="true" ${get(c,p)?'selected':''}>Sim</option><option value="false" ${!get(c,p)?'selected':''}>Não</option></select></label>`:`<label>${l}<input data-p="${p}" data-t="${t||'text'}" type="${t==='number'?'number':'text'}" step="any" value="${esc(get(c,p))}" ${p==='adspower.apiKey'?`placeholder="${c.adspower.hasKey?'(configurada)':''}"`:''}></label>`).join('');
+}
+$('#bSave').onclick=async()=>{const patch={};document.querySelectorAll('#cfg [data-p]').forEach(el=>{const ks=el.dataset.p.split('.');let o=patch;ks.slice(0,-1).forEach(k=>o=o[k]??={});let v=el.value;if(el.tagName==='SELECT')v=v==='true';else if(el.dataset.t==='number')v=Number(v);o[ks.at(-1)]=v});await post('/api/config',patch);$('#cfgMsg').textContent='Salvo ✓ (vale para as próximas aberturas)';};
+$('#bTest').onclick=async()=>{$('#cfgMsg').textContent='Testando…';const r=await post('/api/test-connection',{});$('#cfgMsg').textContent=r.ok?`✓ ${r.profiles} perfis · ${Object.entries(r.countries).map(([k,v])=>`${k}: ${v}`).join(', ')}`:'✗ '+r.error};
+
+const flag_=(id,k,v)=>post('/api/profile-flags',{id,[k]:v});window.flag=flag_;
+function kpi(l,v,x=''){return `<div class="card kpi"><b>${v}</b><span>${l}${x}</span></div>`}
+function render(){
+  if(!S)return;const s=S.scheduler,sys=S.sys;
+  const st=$('#status');st.textContent={running:'rodando',paused:'pausado',stopped:'parado',stopping:'parando…'}[s.status];st.className='pill '+s.status;
+  $('#bStart').textContent=s.status==='paused'?'▶ Retomar':'▶ Iniciar rodízio';$('#bStart').disabled=s.status==='running'||s.status==='stopping';
+  $('#bPause').disabled=s.status!=='running';$('#bStop').disabled=s.status==='stopped'||s.status==='stopping';
+  $('#sub').textContent=`${s.total} perfis · rodada nº ${s.cycle} · rampa 5→20 min por perfil · até ${S.config.scheduler.concurrency} simultâneos`;
+  const nc=$('#noteCard');nc.style.display=s.note?'block':'none';nc.textContent='⚠ '+s.note;
+  if(!cfgFilled){fillCfg(S.config);cfgFilled=true}
+  if(R){const t=R.totals,d=R.today||{};const row=(x,pg)=>kpi('Páginas',pg)+kpi('Sessões',x.sessions)+kpi('Horas navegadas',x.totalNavHours+'h')+kpi('Taxa de páginas puladas',x.skipRate+'%')+kpi('Tempo médio / página',x.avgDwellSec+'s')+kpi('Carregamento médio',x.avgLoadSec+'s');
+  $('#kpis').innerHTML='<h2 class="kh">Hoje'+(d.profiles!=null?' · '+d.profiles+' perfis ativos':'')+'</h2>'+row(d,d.visits)+'<h2 class="kh">Histórico (total)</h2>'+row(t,t.visits);}
+  const pct=s.total?Math.round((s.done+s.failed)/s.total*100):0;
+  $('#cycle').innerHTML=`<div style="display:flex;justify-content:space-between"><b>${s.done+s.failed} / ${s.total} perfis</b><span class="mut">${pct}%</span></div><div class="bar"><i style="width:${pct}%"></i></div>
+  <p class="mut">✔ ${s.done} concluídos · ✖ ${s.failed} com falha · ⏳ ${s.queued} na fila · ● ${s.active.length} abertos agora (limite efetivo ${s.effectiveConcurrency})<br>${s.noProxy?`<br><span class="warn">⚠ ${s.noProxy} perfis sem proxy ignorados (entram sozinhos quando receberem proxy)</span>`:''}<br>Iniciada ${ago(s.cycleStartedAt)}${s.nextCycleAt>Date.now()?` · próxima rodada em ${fmtT(s.nextCycleAt-Date.now())}`:''}</p>`;
+  const cc=v=>v>85?'bad':v>70?'warn':'ok';
+  $('#sys').innerHTML=`<div class="grid k" style="grid-template-columns:repeat(4,1fr)"><div class="kpi"><b class="${cc(sys.cpu30)}">${sys.cpu30}%</b><span>CPU (30s)</span></div><div class="kpi"><b>${(sys.availMB/1024).toFixed(1)} GB</b><span>RAM livre de ${(sys.totalMB/1024).toFixed(0)}</span></div><div class="kpi"><b>${(sys.browserMB/1024).toFixed(1)} GB</b><span>Navegadores (${sys.browserProcs} proc.)</span></div><div class="kpi"><b>${sys.swapMB>1024?'<span class="warn">':''}${(sys.swapMB/1024).toFixed(1)} GB${sys.swapMB>1024?'</span>':''}</b><span>Swap</span></div></div>`;
+  $('#active').innerHTML=s.active.length?s.active.map(a=>{const tot=a.endsAt-a.startedAt,el=Date.now()-a.startedAt,p=Math.min(100,el/tot*100);return `<div class="sess"><div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap"><b>${flag(a.country)} ${esc(a.name)} <span class="mut">#${a.serial} · ${esc(a.profileId)}</span></b><span class="mut">restam ${fmtT(a.endsAt-Date.now())} · ${a.pages||0} págs · ${a.skipped||0} puladas</span></div>
+  <div class="mut">👤 ${esc(a.persona?.name)} ${a.persona?.age} anos · ${esc(a.persona?.archetype)} · interesses: ${esc((a.persona?.interests||[]).join(', '))} · proxy ${esc(a.proxy)}</div>
+  <div>${esc(a.phase)} <span class="mut">${esc((a.url||'').slice(0,90))}</span></div><div class="bar"><i style="width:${p}%"></i></div></div>`}).join(''):'<span class="mut">Nenhum perfil aberto.</span>';
+  drawChart();
+  // perfis
+  const bp=R?.byProfile||{};const actIds=new Set(s.active.map(a=>a.profileId)),q=new Set(s.queueIds);
+  $('#pc').textContent=s.profiles.length;
+  $('#tProfiles').innerHTML='<tr><th>#</th><th>Perfil</th><th>País</th><th>Estado</th><th>Rampa</th><th title="Logado? (janela minimizada em vez de sem janela)">Logado</th><th>Sessões</th><th>Págs</th><th>Tempo</th><th>Última</th></tr>'+s.profiles.map(p=>{const x=bp[p.id]||{};const stt=actIds.has(p.id)?'<span class="ok">● navegando</span>':x.lastError&&Date.now()-x.lastErrorAt<36e5?`<span class="bad" title="${esc(x.lastError)}">✖ erro</span>`:q.has(p.id)?'⏳ fila':'—';return `<tr><td>${p.serial}</td><td title="${esc(p.name)} · ${esc(p.proxy)}">${esc(p.name)}</td><td>${flag(p.country)} ${esc(p.country)}</td><td>${stt}</td><td>${p.ramp.warmed?'<span class="ok">aquecido</span>':`dia ${p.ramp.day} · ${p.ramp.minutes} min`}</td><td><label title="Logado no Facebook"><input type="checkbox" style="width:auto" ${p.flags?.facebook?'checked':''} onchange="flag('${p.id}','facebook',this.checked)">FB</label> <label title="Logado no Google/YouTube"><input type="checkbox" style="width:auto" ${p.flags?.google?'checked':''} onchange="flag('${p.id}','google',this.checked)">G</label></td><td>${x.sessions||0}</td><td>${x.ok||0}${x.skipped?` <span class="mut">(+${x.skipped} puladas)</span>`:''}</td><td>${fmtT(x.dwellMs||0)}</td><td>${ago(x.lastRun)}</td></tr>`}).join('');
+}
+function drawChart(){
+  const h=S.hist||[];if(h.length<2)return;const W=400,H=90;const x=i=>i/(h.length-1)*W;
+  const maxA=Math.max(...h.map(p=>p.availMB),1);
+  const line=(f,c)=>`<polyline fill="none" stroke="${c}" stroke-width="1.6" points="${h.map((p,i)=>`${x(i).toFixed(1)},${(H-2-f(p)*(H-4)).toFixed(1)}`).join(' ')}"/>`;
+  $('#chart').innerHTML=line(p=>p.cpu/100,'var(--acc)')+line(p=>p.availMB/maxA,'var(--ok)');
+}
+function renderReport(){
+  if(!R)return;
+  $('#tDomains').innerHTML='<tr><th>Site</th><th>Visitas</th><th>Puladas</th><th>Tempo méd.</th><th>Load méd.</th></tr>'+R.domains.map(d=>`<tr><td>${esc(d.domain)}</td><td>${d.visits}</td><td>${d.skipped?`<span class="warn" title="${esc(JSON.stringify(d.reasons))}">${d.skipped}</span>`:0}</td><td>${d.avgDwellSec}s</td><td>${d.avgLoadSec}s</td></tr>`).join('');
+  const nm={};(S?.scheduler.profiles||[]).forEach(p=>nm[p.id]=p);
+  $('#tRecent').innerHTML='<tr><th>Hora</th><th>Perfil</th><th>Site</th><th>Origem</th><th>Tempo</th><th>Resultado</th></tr>'+R.recent.map(v=>`<tr><td>${new Date(v.ts).toLocaleTimeString()}</td><td>#${nm[v.profileId]?.serial??v.profileId}</td><td title="${esc(v.url)}">${esc(v.domain)} <span class="mut">${esc(v.title).slice(0,40)}</span></td><td>${esc(v.source)}</td><td>${v.status==='ok'?Math.round(v.dwellMs/1000)+'s':'—'}</td><td>${v.status==='ok'?'<span class="ok">ok</span>':`<span class="warn">${esc(v.reason)}</span>`}</td></tr>`).join('');
+  const mx=Math.max(1,...Object.values(R.skipReasons));
+  $('#skips').innerHTML=Object.entries(R.skipReasons).sort((a,b)=>b[1]-a[1]).map(([k,n])=>`<div style="display:grid;grid-template-columns:130px 1fr 40px;gap:8px;align-items:center"><span>${esc(k)}</span><div class="bar"><i style="width:${n/mx*100}%;background:var(--warn)"></i></div><span class="mut">${n}</span></div>`).join('')||'<span class="mut">Nenhuma ainda.</span>';
+  $('#tSess').innerHTML='<tr><th>Fim</th><th>Perfil</th><th>Persona</th><th>Dur.</th><th>Págs</th><th></th></tr>'+R.recentSessions.map(x=>`<tr><td>${new Date(x.endedAt).toLocaleTimeString()}</td><td title="${esc(x.name)}">${flag(x.country)} ${esc(x.name).slice(0,22)}</td><td>${esc(x.persona)}</td><td>${fmtT(x.endedAt-x.startedAt)}</td><td>${x.ok}/${x.pages}</td><td>${x.error?`<span class="bad" title="${esc(x.error)}">erro</span>`:x.aborted?'<span class="warn">interrompida</span>':'<span class="ok">ok</span>'}</td></tr>`).join('');
+}
+async function poll(){try{S=await api('/api/state');S.hist=await api('/api/sys-history');render()}catch{$('#sub').textContent='sem conexão com o servidor'}}
+async function pollReport(){try{R=await api('/api/report');renderReport();render()}catch{}}
+poll();pollReport();setInterval(poll,2000);setInterval(pollReport,5000);
+</script>
+</body>
+</html>
