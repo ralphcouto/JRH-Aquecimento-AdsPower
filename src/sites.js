@@ -3,7 +3,7 @@
 
 export const CATEGORIES = ['news', 'sports', 'tech', 'shopping', 'entertainment', 'finance', 'travel', 'food', 'health', 'auto', 'home', 'spirituality', 'fitness'];
 
-const GLOBAL = {
+export const GLOBAL = {
   news: ['bbc.com', 'reuters.com', 'apnews.com'],
   sports: ['espn.com', 'olympics.com'],
   tech: ['theverge.com', 'wired.com', 'techradar.com'],
@@ -15,7 +15,7 @@ const GLOBAL = {
   health: ['healthline.com', 'mayoclinic.org'],
   auto: ['caranddriver.com', 'motortrend.com'],
   home: ['ikea.com', 'housebeautiful.com'],
-  spirituality: ['biddytarot.com', 'labyrinthos.co', 'tarot.com', 'astrology.com', 'mindbodygreen.com', 'insighttimer.com', 'psychologytoday.com'],
+  spirituality: ['biddytarot.com', 'labyrinthos.co', 'tarot.com', 'astrology.com', 'mindbodygreen.com', 'insighttimer.com', 'psychologytoday.com', 'tinybuddha.com', 'chopra.com', 'dailyom.com', 'gaia.com', 'verywellmind.com', 'psychcentral.com', 'lonerwolf.com', 'hayhouse.com'],
   fitness: ['menshealth.com', 'womenshealthmag.com', 'shape.com', 'runnersworld.com', 'acefitness.org', 'nerdfitness.com', 'yogajournal.com'],
 };
 

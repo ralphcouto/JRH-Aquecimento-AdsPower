@@ -3,3 +3,6 @@ data
 reports
 .claude
 .DS_Store
+
+.env
+tools/bridge-token.txt

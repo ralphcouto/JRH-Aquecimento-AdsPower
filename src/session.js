@@ -4,7 +4,8 @@ import { ads } from './adspower.js';
 import { getConfig } from './config.js';
 import { store } from './store.js';
 import { buildPersona, publicPersona } from './persona.js';
-import { countryInfo, sitesFor, queriesFor } from './sites.js';
+import { countryInfo, queriesFor } from './sites.js';
+import { sitesForOk } from './siteregistry.js';
 import { logAction, countSince, usedComments } from './fbstats.js';
 import { rand, randInt, sleep, moveMouse, wander, readPage, typeLike, inspectPage, pickInternalLink, domainOf, tryConsent } from './human.js';
 
@@ -191,7 +192,7 @@ async function engage(S, nav, meta, clicksLeft) {
 
 async function stepDirect(S) {
   const category = S.persona.pickInterest();
-  const options = sitesFor(S.country, category).filter((s) => !struck(S, domainOf('https://' + s)));
+  const options = sitesForOk(S.country, category).filter((s) => !struck(S, domainOf('https://' + s)));
   if (!options.length) { await sleep(2000, S.signal); return; }
   const site = pickOne(options);
   const meta = { source: 'direto', category };
@@ -321,7 +322,7 @@ async function minimizeWindow(context, page) {
 async function stepFacebook(S) {
   if (struck(S, 'facebook.com')) return false;
   const fb = getConfig().facebook;
-  const own = S.flags.fbPages?.length ? pickOne(S.flags.fbPages).url : S.flags.fbPage;
+  const own = fb.pagesEnabled === false ? '' : S.flags.fbPages?.length ? pickOne(S.flags.fbPages).url : S.flags.fbPage;
   const r = Math.random();
   if (own && r < fb.pageRatio) return fbOwnPage(S, own);
   if (r < fb.pageRatio + fb.reelRatio) return fbReels(S, fb);

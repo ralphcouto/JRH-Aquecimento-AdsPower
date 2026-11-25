@@ -1,5 +1,16 @@
 import { CATEGORIES, countryInfo } from './sites.js';
-import { getConfig } from './config.js';
+import fs from 'node:fs';
+import path from 'node:path';
+import { getConfig, DATA_DIR } from './config.js';
+
+// Cadastro fixo de perfis de usuário: data/personas.json → { profileId: { name, age, trait, interests, pace, ... } }
+const PFILE = path.join(DATA_DIR, 'personas.json');
+let pcache = null, pmtime = 0;
+export function loadPersonas() {
+  try { const m = fs.statSync(PFILE).mtimeMs; if (!pcache || m !== pmtime) { pcache = JSON.parse(fs.readFileSync(PFILE, 'utf8')); pmtime = m; } } catch { pcache = pcache || {}; }
+  return pcache;
+}
+export function savePersonas(obj) { fs.mkdirSync(DATA_DIR, { recursive: true }); fs.writeFileSync(PFILE, JSON.stringify(obj, null, 1)); pcache = obj; pmtime = fs.statSync(PFILE).mtimeMs; }
 
 function hash(str) {
   let h = 2166136261;
@@ -50,7 +61,7 @@ export function buildPersona(profile, country) {
   while (interests.length < n) interests.push(pool.splice(Math.floor(r() * pool.length), 1)[0]);
   const trait = pick(TRAITS);
   const names = NAMES[info.lang] || NAMES.en;
-  return {
+  const gen = {
     id: profile.id,
     name: pick(names),
     age: 19 + Math.floor(r() * 36),
@@ -70,8 +81,17 @@ export function buildPersona(profile, country) {
       return interests[2 + Math.floor(Math.random() * (interests.length - 2))];
     },
   };
+  const st = loadPersonas()[profile.id];
+  if (!st) return gen;
+  const p = { ...gen, ...Object.fromEntries(['name', 'fullName', 'age', 'trait', 'pace', 'scrollSpeed', 'searchBias', 'depth'].filter((k) => st[k] != null).map((k) => [k, st[k]])) };
+  if (Array.isArray(st.interests) && st.interests.length >= 2) {
+    p.interests = st.interests;
+    p.pickInterest = () => { const x = Math.random(); if (x < 0.4) return p.interests[0]; if (x < 0.7) return p.interests[1]; return p.interests[2 + Math.floor(Math.random() * Math.max(1, p.interests.length - 2))] || p.interests[0]; };
+  }
+  p.archetype = `${LABEL[p.interests[0]]} · ${p.trait}`;
+  return p;
 }
 
 export function publicPersona(p) {
-  return { name: p.name, age: p.age, archetype: p.archetype, interests: p.interests, lang: p.lang, pace: +p.pace.toFixed(2) };
+  return { name: p.fullName || p.name, age: p.age, archetype: p.archetype, interests: p.interests, lang: p.lang, pace: +p.pace.toFixed(2) };
 }

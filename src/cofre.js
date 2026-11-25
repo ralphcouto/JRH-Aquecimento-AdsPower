@@ -15,9 +15,10 @@ function matchProfile(parent, profiles, aliases) {
 export async function syncCofre(profiles) {
   const c = getConfig().cofre || {};
   const key = process.env.COFRE_API_KEY || c.apiKey;
-  if (!c.url || !key || /COLE_AQUI/.test(key)) throw new Error('Configure cofre.url e cofre.apiKey em data/config.json');
+  if (!c.url || !key || /COLE_AQUI/.test(key)) throw new Error('Cofre sem URL ou chave: preencha em Configurações › Conexões');
   const res = await fetch(`${c.url.replace(/\/$/, '')}/v1/assets?kind=fb_page&limit=500`, { headers: { Authorization: `Bearer ${key}` }, signal: AbortSignal.timeout(20000) });
-  if (!res.ok) throw new Error(`Cofre respondeu ${res.status}`);
+  if (res.status === 401 || res.status === 403) throw new Error(`O Cofre recusou a chave (HTTP ${res.status}). Confira a chave em Configurações › Conexões: ela deve ser a do Cofre (começa com "cofre_"), não a do AdsPower.`);
+  if (!res.ok) throw new Error(`Cofre respondeu HTTP ${res.status}`);
   const assets = (await res.json()).assets || [];
   const byProfile = new Map(), unmatched = new Map();
   for (const a of assets) {

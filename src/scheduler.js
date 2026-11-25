@@ -50,7 +50,16 @@ class Scheduler {
     const s = getConfig().scheduler;
     const groups = csv(s.groupFilter).map((g) => g.toLowerCase());
     const inc = new Set(csv(s.includeIds)), exc = new Set(csv(s.excludeIds));
-    this.profiles = all.filter((p) => (!groups.length || groups.includes(p.group.toLowerCase())) && (!inc.size || inc.has(p.id)) && !exc.has(p.id));
+    const sc = { facebook: true, newProfiles: true, others: true, ...(s.scope || {}) };
+    const newMs = (s.newProfileDays ?? 30) * 864e5;
+    const kind = (p) => {
+      const f = store.flags(p.id);
+      if (f.facebook || f.fbPages?.length || f.fbPage) return 'facebook';
+      if ((p.created && Date.now() - p.created < newMs) || !store.firstRun(p.id)) return 'newProfiles';
+      return 'others';
+    };
+    // lista manual de ids manda; sem ela, valem as opções "quem aquecer"
+    this.profiles = all.filter((p) => (!groups.length || groups.includes(p.group.toLowerCase())) && (inc.size ? inc.has(p.id) : sc[kind(p)]) && !exc.has(p.id));
     this.noProxy = this.profiles.filter((p) => p.proxy === 'sem proxy');
     if (s.requireProxy) this.profiles = this.profiles.filter((p) => p.proxy !== 'sem proxy');
     return this.profiles;

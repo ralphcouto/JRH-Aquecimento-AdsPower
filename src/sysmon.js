@@ -1,6 +1,7 @@
 import os from 'node:os';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
+import { getConfig } from './config.js';
 
 const run = promisify(execFile);
 
@@ -24,6 +25,7 @@ class SysMon {
   }
 
   #tickCpu() {
+    if (getConfig().adspower.bridgeToken) { this.history.push({ t: Date.now(), cpu: this.cpu, availMB: Math.round(this.availMB), browserMB: Math.round(this.browserMB), load1: 0 }); if (this.history.length > 360) this.history.shift(); return; }
     const cur = os.cpus().reduce((a, c) => {
       const t = Object.values(c.times).reduce((x, y) => x + y, 0);
       return { idle: a.idle + c.times.idle, total: a.total + t };
@@ -38,7 +40,19 @@ class SysMon {
     if (this.history.length > 360) this.history.shift();
   }
 
+  /** Modo remoto: mede o PC do AdsPower pela ponte, não o NAS. */
+  async #tickRemote() {
+    const { baseUrl, bridgeToken } = getConfig().adspower;
+    try {
+      const r = await fetch(new URL('/sys', baseUrl), { headers: { 'x-bridge-token': bridgeToken }, signal: AbortSignal.timeout(4000) });
+      const j = await r.json();
+      this.cpu = j.cpu ?? this.cpu; this.availMB = j.availMB ?? this.availMB; this.totalMB = j.totalMB ?? this.totalMB;
+      this.browserMB = j.browserMB ?? 0; this.browserProcs = j.browserProcs ?? 0; this.cores = j.cores ?? this.cores;
+    } catch {}
+  }
+
   async #tickSlow() {
+    if (getConfig().adspower.bridgeToken) return this.#tickRemote();
     try {
       if (process.platform === 'darwin') {
         const { stdout } = await run('vm_stat');

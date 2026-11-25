@@ -1,80 +1,89 @@
 import { syncCofre } from './cofre.js';
+import { allActions } from './fbstats.js';
+import { loadRegistry, checkAll } from './siteregistry.js';
+import { loadPersonas } from './persona.js';
 import express from 'express';
 import path from 'node:path';
+import fs from 'node:fs';
+import { execSync } from 'node:child_process';
 import os from 'node:os';
 import crypto from 'node:crypto';
 import { ROOT, getConfig, updateConfig, maskedConfig } from './config.js';
+import { mountAuth, ensurePassword, googleEnabled, ssoEnabled } from './auth.js';
 import { scheduler } from './scheduler.js';
+import { ads } from './adspower.js';
 import { sysmon } from './sysmon.js';
 import { store } from './store.js';
 
 sysmon.start();
 
-// ---------- segurança: senha + somente rede local ----------
+// ---------- versão (package.json + commit curto, se houver git) ----------
+const VERSION = (() => {
+  let v = '0.0.0', build = '';
+  try { v = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8')).version || v; } catch {}
+  try { build = execSync('git rev-parse --short HEAD', { cwd: ROOT, stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim(); } catch {}
+  return { version: v, build };
+})();
+
+// ---------- segurança: rede local + login (Google / Hub / senha) ----------
 const strip = (ip = '') => ip.replace(/^::ffff:/, '');
 const isLocal = (ip) => ['127.0.0.1', '::1'].includes(strip(ip));
 const isPrivate = (ip) => {
   ip = strip(ip);
   return isLocal(ip) || /^(10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|169\.254\.|fe80:|fc|fd)/i.test(ip);
 };
-
-if (!getConfig().dashboard.password) {
-  const pw = crypto.randomBytes(9).toString('base64url');
-  updateConfig({ dashboard: { password: pw } });
-  console.log(`\nSenha do painel (gerada agora): ${pw}\nEla fica salva em data/config.json\n`);
-}
-
-const sessions = new Map(); // token -> expiração
-const fails = new Map(); // ip -> [timestamps]
-const parseCookies = (h = '') => Object.fromEntries(h.split(';').map((c) => c.trim().split('=').map(decodeURIComponent)).filter((x) => x[0]));
-const authed = (req) => {
-  const t = parseCookies(req.headers.cookie).wsid;
-  const exp = t && sessions.get(t);
-  return !!exp && exp > Date.now();
-};
+ensurePassword();
 
 const app = express();
 app.disable('x-powered-by');
-app.use(express.json({ limit: '100kb' }));
+app.set('trust proxy', false);
+app.use(express.json({ limit: '300kb' }));
 
 app.use((req, res, next) => {
   if (!isPrivate(req.socket.remoteAddress)) return res.status(403).send('Acesso permitido apenas na rede local.');
   next();
 });
-
-const LOGIN = (msg = '') => `<!doctype html><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><title>Entrar</title>
-<style>body{font:15px -apple-system,sans-serif;display:grid;place-items:center;height:100vh;margin:0;background:#0e1116;color:#e8eaed}form{display:grid;gap:12px;width:min(320px,90vw)}input,button{font:inherit;padding:10px;border-radius:8px;border:1px solid #333;background:#171b22;color:inherit}button{background:#2563eb;border-color:#2563eb;cursor:pointer}p{color:#f87171;margin:0}</style>
-<form method=post action=/login><h2>🔥 Aquecimento AdsPower</h2><input type=password name=password placeholder="Senha do painel" autofocus required><button>Entrar</button>${msg ? `<p>${msg}</p>` : ''}</form>`;
-
-app.get('/login', (_req, res) => res.send(LOGIN()));
-app.post('/login', express.urlencoded({ extended: false }), (req, res) => {
-  const ip = strip(req.socket.remoteAddress);
-  const recent = (fails.get(ip) || []).filter((t) => Date.now() - t < 600000);
-  if (recent.length >= 5) return res.status(429).send(LOGIN('Muitas tentativas. Aguarde 10 minutos.'));
-  const a = Buffer.from(String(req.body.password || '')), b = Buffer.from(getConfig().dashboard.password);
-  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
-    fails.set(ip, [...recent, Date.now()]);
-    return res.status(401).send(LOGIN('Senha incorreta.'));
-  }
-  const token = crypto.randomBytes(24).toString('hex');
-  sessions.set(token, Date.now() + 7 * 864e5);
-  res.setHeader('Set-Cookie', `wsid=${token}; HttpOnly; SameSite=Strict; Path=/; Max-Age=${7 * 86400}`);
-  res.redirect('/');
-});
-
-app.use((req, res, next) => {
-  if (authed(req)) return next();
-  if (req.path.startsWith('/api/')) return res.status(401).json({ error: 'não autenticado' });
-  res.redirect('/login');
-});
+mountAuth(app, { version: VERSION.version });
+// quem pode mexer em credenciais: o próprio computador ou quem entrou por Google/Hub (e-mail autorizado)
+const canAdmin = (req) => isLocal(req.socket.remoteAddress) || req.user?.method === 'google' || req.user?.method === 'hub';
 
 app.use(express.static(path.join(ROOT, 'public')));
 
 // ---------- API ----------
 app.get('/api/state', (req, res) => {
-  res.json({ scheduler: scheduler.snapshot(), sys: sysmon.snapshot(), config: maskedConfig(), isLocal: isLocal(req.socket.remoteAddress), now: Date.now() });
+  res.json({ scheduler: scheduler.snapshot(), sys: sysmon.snapshot(), config: maskedConfig(), isLocal: canAdmin(req), user: req.user ? { email: req.user.email, name: req.user.name, method: req.user.method } : null, auth: { google: googleEnabled(), sso: ssoEnabled() }, now: Date.now(), ...VERSION });
 });
 app.get('/api/report', (_req, res) => res.json(store.report()));
+// cadastro de sites verificados e perfis de usuário (personas)
+let siteJob = null;
+app.get('/api/sites', (_req, res) => res.json({ checking: siteJob, sites: Object.entries(loadRegistry()).map(([domain, e]) => ({ domain, ...e })) }));
+app.post('/api/sites-check', (_req, res) => {
+  if (siteJob) return res.json({ ok: true, checking: siteJob });
+  siteJob = { done: 0, total: 0 };
+  checkAll({ onProgress: (n, t) => { siteJob = { done: n, total: t }; } }).catch(() => {}).finally(() => { siteJob = null; });
+  res.json({ ok: true, checking: siteJob });
+});
+app.get('/api/personas', (_req, res) => res.json(loadPersonas()));
+// índice dos perfis que já navegaram (funciona mesmo com o AdsPower fechado)
+app.get('/api/history-index', (_req, res) => {
+  const m = new Map();
+  for (const s of store.sessions) {
+    const x = m.get(s.profileId) || { id: s.profileId, name: s.name, sessions: 0, pages: 0, lastRun: 0 };
+    x.name = s.name || x.name; x.sessions++; x.lastRun = Math.max(x.lastRun, s.endedAt || 0); m.set(s.profileId, x);
+  }
+  for (const v of store.visits) { const x = m.get(v.profileId) || { id: v.profileId, name: v.profileId, sessions: 0, pages: 0, lastRun: 0 }; x.pages++; m.set(v.profileId, x); }
+  res.json([...m.values()]);
+});
+// histórico completo de um perfil: sessões, páginas visitadas e ações no Facebook
+app.get('/api/history', (req, res) => {
+  const id = String(req.query.profileId || '');
+  if (!id) return res.status(400).json({ error: 'profileId obrigatório' });
+  const cap = Math.min(Number(req.query.limit) || 5000, 20000);
+  const visits = store.visits.filter((v) => v.profileId === id).slice(-cap);
+  const sessions = store.sessions.filter((s) => s.profileId === id);
+  const actions = allActions().filter((a) => a.profileId === id).slice(-cap);
+  res.json({ profileId: id, visits, sessions, actions });
+});
 app.get('/api/sys-history', (_req, res) => res.json(sysmon.history));
 app.get('/api/export/visits.csv', (_req, res) => res.type('text/csv').attachment('visitas.csv').send(store.csv()));
 
@@ -90,12 +99,16 @@ app.post('/api/control', async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+const SECRET_PATHS = ['adspower.apiKey', 'adspower.bridgeToken', 'cofre.apiKey', 'auth.googleClientSecret', 'auth.ssoSecret'];
+const ADMIN_ONLY = ['adspower', 'cofre', 'auth', 'hub'];
 app.post('/api/config', (req, res) => {
   const patch = req.body || {};
-  delete patch.dashboard; // senha/porta só no arquivo
-  // chave e URL do AdsPower: só editáveis no próprio Mac
-  if (!isLocal(req.socket.remoteAddress)) delete patch.adspower;
-  else if (patch.adspower && !patch.adspower.apiKey) delete patch.adspower.apiKey;
+  delete patch.dashboard; // porta/senha só no arquivo ou no ambiente
+  delete patch.hasSecret; delete patch.locked;
+  if (!canAdmin(req)) for (const k of ADMIN_ONLY) delete patch[k];
+  // segredo em branco = manter o atual
+  for (const p of SECRET_PATHS) { const k = p.split('.'); let o = patch; for (const x of k.slice(0, -1)) o = o?.[x]; if (o && k.at(-1) in o && !o[k.at(-1)]) delete o[k.at(-1)]; }
+  for (const k of ['hasKey']) { if (patch.adspower) delete patch.adspower[k]; if (patch.cofre) delete patch.cofre[k]; }
   updateConfig(patch);
   res.json(maskedConfig());
 });
@@ -113,11 +126,18 @@ app.post('/api/profile-flags', (req, res) => {
 
 app.post('/api/cofre-sync', async (_req, res) => {
   try {
-    const profiles = scheduler.profiles.length ? scheduler.profiles : await scheduler.loadProfiles();
+    // casa com TODOS os perfis do AdsPower (não só os que estão no escopo do rodízio); sem AdsPower, usa a última lista salva
+    let profiles, aviso = '';
+    try { profiles = await ads.listProfiles(); } catch (e) {
+      const c = ads.cachedProfiles();
+      if (!c?.profiles?.length) throw e;
+      profiles = c.profiles;
+      aviso = `AdsPower não respondeu (${e.message.replace(/^AdsPower: /, '')}). Usei a lista de perfis salva em ${new Date(c.at).toLocaleString('pt-BR')}.`;
+    }
     const r = await syncCofre(profiles);
     for (const p of profiles) if (store.flags(p.id).fbPages) store.setFlags(p.id, { fbPages: [] }); // limpa as de sincronizações anteriores
     for (const { profile, pages } of r.byProfile.values()) store.setFlags(profile.id, { fbPages: pages });
-    res.json({ ok: true, total: r.total, perfis: r.byProfile.size, paginas: [...r.byProfile.values()].reduce((n, x) => n + x.pages.length, 0), semPerfil: r.unmatched });
+    res.json({ ok: true, total: r.total, perfis: r.byProfile.size, paginas: [...r.byProfile.values()].reduce((n, x) => n + x.pages.length, 0), semPerfil: r.unmatched, aviso });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 

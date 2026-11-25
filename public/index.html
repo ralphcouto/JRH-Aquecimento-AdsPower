@@ -5,40 +5,130 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Aquecimento AdsPower</title>
 <style>
-:root{--bg:#f5f6f8;--card:#fff;--ink:#14171c;--mut:#6b7280;--line:#e5e7eb;--acc:#2563eb;--ok:#16a34a;--warn:#d97706;--bad:#dc2626;--chip:#eef2ff}
-@media (prefers-color-scheme:dark){:root{--bg:#0e1116;--card:#171b22;--ink:#e8eaed;--mut:#98a2b3;--line:#262c36;--acc:#5b8def;--ok:#34d399;--warn:#fbbf24;--bad:#f87171;--chip:#1e2740}}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
-header{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;padding:16px 24px;border-bottom:1px solid var(--line);background:var(--card);position:sticky;top:0;z-index:5}
-h1{font-size:18px;margin:0}h2{font-size:14px;margin:0 0 10px;color:var(--mut);text-transform:uppercase;letter-spacing:.04em}
-main{padding:20px 24px;display:grid;gap:16px;max-width:1500px;margin:auto}
-.grid{display:grid;gap:12px}.k{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}.two{grid-template-columns:repeat(auto-fit,minmax(420px,1fr))}
-.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px;min-width:0}
-.kh{grid-column:1/-1;font-size:12px;color:var(--mut);text-transform:uppercase;letter-spacing:.05em;margin:6px 0 -2px;font-weight:600}.kpi b{display:block;font-size:24px;font-variant-numeric:tabular-nums}.kpi span{color:var(--mut);font-size:12px}
-button{font:inherit;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:7px 14px;border-radius:8px;cursor:pointer}
-button.p{background:var(--acc);border-color:var(--acc);color:#fff}button.d{color:var(--bad)}button:disabled{opacity:.45;cursor:default}
-.pill{display:inline-block;padding:2px 9px;border-radius:99px;font-size:12px;background:var(--chip)}
-.pill.running{background:color-mix(in srgb,var(--ok) 20%,transparent);color:var(--ok)}.pill.paused{background:color-mix(in srgb,var(--warn) 22%,transparent);color:var(--warn)}
-table{width:100%;border-collapse:collapse;font-size:13px}th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:360px}
-th{color:var(--mut);font-weight:500;font-size:12px;position:sticky;top:0;background:var(--card)}
-.scroll{max-height:380px;overflow:auto}
-.bar{height:8px;border-radius:99px;background:var(--line);overflow:hidden}.bar>i{display:block;height:100%;background:var(--acc);transition:width .6s}
-.sess{display:grid;gap:6px;padding:10px 0;border-bottom:1px solid var(--line)}.sess:last-child{border:0}
+:root{color-scheme:light dark;
+  --bg:#f4f5f9;--bg2:#eceef5;--card:#ffffff;--card2:#f8f9fc;--ink:#0f172a;--mut:#64748b;--line:#e2e8f0;
+  --acc:#4f46e5;--acc2:#7c3aed;--accsoft:#eef0ff;--ok:#059669;--warn:#d97706;--bad:#dc2626;--chip:#eef0ff;
+  --shadow:0 1px 2px rgba(15,23,42,.06),0 4px 16px rgba(15,23,42,.05);--r:14px}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#0b0e17;--bg2:#10141f;--card:#131826;--card2:#171d2e;--ink:#e6e9f2;--mut:#8b95ad;--line:#242b3d;
+  --acc:#818cf8;--acc2:#a78bfa;--accsoft:#1c2142;--ok:#34d399;--warn:#fbbf24;--bad:#f87171;--chip:#1c2142;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.25)}}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(1200px 500px at 85% -10%,color-mix(in srgb,var(--acc) 12%,transparent),transparent),var(--bg);color:var(--ink);font:14px/1.5 Inter,"Segoe UI Variable","Segoe UI",system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:var(--acc);text-decoration:none}a:hover{text-decoration:underline}
+:focus-visible{outline:2px solid var(--acc);outline-offset:2px;border-radius:6px}
+
+header{display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:space-between;padding:14px 28px;background:color-mix(in srgb,var(--card) 82%,transparent);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}
+.brand{display:flex;align-items:center;gap:12px}
+.logo{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;color:#fff;background:linear-gradient(135deg,var(--acc),var(--acc2));box-shadow:0 4px 14px color-mix(in srgb,var(--acc) 45%,transparent)}
+.logo svg{width:20px;height:20px}
+h1{font-size:17px;margin:0;font-weight:650;letter-spacing:-.01em;display:flex;align-items:center;gap:8px}
+.ver{font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px;background:var(--accsoft);color:var(--acc);letter-spacing:.02em;font-variant-numeric:tabular-nums}
+#sub{font-size:12.5px}
+.actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+
+main{padding:24px 28px 8px;display:grid;gap:18px;max-width:1560px;margin:auto}
+h2{font-size:12px;margin:0 0 12px;color:var(--mut);text-transform:uppercase;letter-spacing:.07em;font-weight:650}
+.grid{display:grid;gap:14px}.k{grid-template-columns:repeat(auto-fit,minmax(160px,1fr))}.two{grid-template-columns:repeat(auto-fit,minmax(min(100%,460px),1fr))}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px 18px;min-width:0;box-shadow:var(--shadow)}
+.kh{grid-column:1/-1;font-size:12px;color:var(--mut);text-transform:uppercase;letter-spacing:.07em;margin:8px 0 -2px;font-weight:650;display:flex;align-items:center;gap:10px}
+.kh::after{content:"";flex:1;height:1px;background:var(--line)}
+.card.kpi{position:relative;overflow:hidden}
+.card.kpi::before{content:"";position:absolute;left:0;top:14px;bottom:14px;width:3px;border-radius:0 3px 3px 0;background:linear-gradient(var(--acc),var(--acc2))}
+.kpi b{display:block;font-size:26px;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1.15}
+.kpi span{color:var(--mut);font-size:12px}
+
+button{font:inherit;font-weight:550;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:8px 15px;border-radius:10px;cursor:pointer;transition:background .15s,border-color .15s,transform .1s,box-shadow .15s;min-height:36px}
+button:hover:not(:disabled){border-color:color-mix(in srgb,var(--acc) 50%,var(--line));background:var(--card2)}
+button:active:not(:disabled){transform:translateY(1px)}
+button.p{background:linear-gradient(135deg,var(--acc),var(--acc2));border-color:transparent;color:#fff;box-shadow:0 2px 10px color-mix(in srgb,var(--acc) 35%,transparent)}
+button.p:hover:not(:disabled){background:linear-gradient(135deg,var(--acc),var(--acc2));filter:brightness(1.08)}
+button.d{color:var(--bad)}button.d:hover:not(:disabled){border-color:var(--bad);background:color-mix(in srgb,var(--bad) 8%,var(--card))}
+button:disabled{opacity:.4;cursor:not-allowed}
+
+.pill{display:inline-flex;align-items:center;gap:6px;padding:4px 11px;border-radius:99px;font-size:12px;font-weight:600;background:var(--chip);color:var(--mut)}
+.pill::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+.pill.running{background:color-mix(in srgb,var(--ok) 16%,transparent);color:var(--ok)}
+.pill.running::before{animation:pulse 1.6s ease-in-out infinite}
+.pill.paused{background:color-mix(in srgb,var(--warn) 18%,transparent);color:var(--warn)}
+.pill.stopping{background:color-mix(in srgb,var(--bad) 14%,transparent);color:var(--bad)}
+@keyframes pulse{50%{opacity:.35;transform:scale(.75)}}
+
+#noteCard{background:color-mix(in srgb,var(--warn) 11%,var(--card));border-color:color-mix(in srgb,var(--warn) 40%,var(--line));color:var(--ink)}
+
+table{width:100%;border-collapse:separate;border-spacing:0;font-size:13px}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:360px}
+th{color:var(--mut);font-weight:600;font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;position:sticky;top:0;background:var(--card);z-index:1}
+tbody tr:hover td,tr:hover td{background:var(--card2)}
+td{font-variant-numeric:tabular-nums}
+.scroll{max-height:400px;overflow:auto;border-radius:10px}
+.scroll::-webkit-scrollbar{width:10px;height:10px}.scroll::-webkit-scrollbar-thumb{background:var(--line);border-radius:10px;border:2px solid var(--card)}
+
+.bar{height:8px;border-radius:99px;background:var(--line);overflow:hidden}
+.bar>i{display:block;height:100%;background:linear-gradient(90deg,var(--acc),var(--acc2));border-radius:99px;transition:width .6s cubic-bezier(.2,.8,.2,1)}
+.sess{display:grid;gap:7px;padding:12px 0;border-bottom:1px solid var(--line)}.sess:first-child{padding-top:0}.sess:last-child{border:0;padding-bottom:0}
 .mut{color:var(--mut)}.ok{color:var(--ok)}.bad{color:var(--bad)}.warn{color:var(--warn)}
-.cfg{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}.cfg label{display:grid;gap:3px;font-size:12px;color:var(--mut)}
-input,select{font:inherit;padding:6px 8px;border-radius:7px;border:1px solid var(--line);background:var(--bg);color:var(--ink);width:100%}
+
+.cfg{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}.cfg label{display:grid;gap:4px;font-size:12px;color:var(--mut);font-weight:500}
+input,select{font:inherit;padding:8px 10px;border-radius:9px;border:1px solid var(--line);background:var(--card2);color:var(--ink);width:100%;min-height:36px;transition:border-color .15s,box-shadow .15s}
+input:focus,select:focus{outline:0;border-color:var(--acc);box-shadow:0 0 0 3px color-mix(in srgb,var(--acc) 22%,transparent)}
+input[type=checkbox]{width:auto;min-height:0;accent-color:var(--acc)}
 svg{width:100%;height:90px;display:block}
-details summary{cursor:pointer;font-weight:600}
+details summary{cursor:pointer;font-weight:650;list-style:none;display:flex;align-items:center;gap:8px}
+details summary::-webkit-details-marker{display:none}
+details summary::before{content:"›";display:inline-block;transition:transform .2s;color:var(--mut);font-size:18px;line-height:1}
+details[open] summary::before{transform:rotate(90deg)}
+footer{max-width:1560px;margin:auto;padding:6px 28px 28px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;color:var(--mut);font-size:12px}
+@media (max-width:640px){header{padding:12px 16px}main{padding:16px 14px 4px}.kpi b{font-size:22px}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+.hist{display:grid;grid-template-columns:260px minmax(0,1fr);min-height:440px;padding:0;overflow:hidden}
+.hl{border-right:1px solid var(--line);display:flex;flex-direction:column;min-width:0}
+.hl input{border:0;border-bottom:1px solid var(--line);border-radius:0;background:transparent;min-height:42px}
+.hl input:focus{box-shadow:none}
+.hlist{overflow:auto;max-height:560px}
+.pi{padding:10px 14px;border-bottom:1px solid var(--line);cursor:pointer;display:grid;gap:2px}
+.pi:hover{background:var(--card2)}.pi.on{background:var(--accsoft);box-shadow:inset 3px 0 0 var(--acc)}
+.pi b{font-weight:600;font-size:13px;display:flex;justify-content:space-between;gap:8px}.pi small{color:var(--mut);font-size:11.5px}
+.hd{padding:16px 18px;min-width:0;overflow:auto;max-height:640px}
+.mini{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;margin-bottom:14px}
+.mini div{background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:8px 12px}.mini b{display:block;font-size:19px;font-weight:700;font-variant-numeric:tabular-nums}.mini span{font-size:11.5px;color:var(--mut)}
+.sb{display:grid;grid-template-columns:150px 1fr 56px;gap:8px;align-items:center;font-size:12px;margin:3px 0}.sb .bar{height:6px}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin:12px 0 10px}
+.chip{font-size:12px;padding:3px 11px;min-height:0;border-radius:99px}.chip.on{background:var(--accsoft);color:var(--acc);border-color:var(--acc)}
+.tree td{vertical-align:top}.tr0{cursor:pointer;font-weight:600}.tr0 td{background:var(--card2)}.tr1{cursor:pointer}.tr1:hover td{background:var(--card2)}
+.car{display:inline-block;width:16px;color:var(--mut);transition:transform .15s}.op .car{transform:rotate(90deg)}
+.tr2 td{font-size:12.5px;color:var(--mut)}.tr2 td:first-child{color:var(--ink)}.tr2 a{color:inherit}
+.bd{display:inline-block;padding:1px 8px;border-radius:99px;font-size:11px;font-weight:600;background:var(--chip)}
+.bd.okk{background:color-mix(in srgb,var(--ok) 16%,transparent);color:var(--ok)}.bd.skk{background:color-mix(in srgb,var(--warn) 18%,transparent);color:var(--warn)}.bd.err{background:color-mix(in srgb,var(--bad) 14%,transparent);color:var(--bad)}.bd.act{background:var(--accsoft);color:var(--acc)}
+.sec{border:1px solid var(--line);border-radius:12px;margin:0 0 12px;background:var(--card2)}
+.sec>summary{padding:12px 16px;font-weight:650}.sec>.sb2{padding:2px 16px 16px;display:grid;gap:12px}
+.sec .sd{color:var(--mut);font-size:12.5px;margin:0 0 4px}
+.fld{display:grid;gap:4px;font-size:12.5px;color:var(--mut);font-weight:500}.fld small{font-weight:400;color:var(--mut)}
+.row2{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
+.sw{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--card);cursor:pointer;color:var(--ink);font-size:13.5px;font-weight:500}
+.sw input{margin-top:2px;width:18px;height:18px}.sw small{display:block;color:var(--mut);font-weight:400;font-size:12px;margin-top:2px}
+.lock{font-size:11px;color:var(--warn);font-weight:600}
+textarea{font:inherit;padding:8px 10px;border-radius:9px;border:1px solid var(--line);background:var(--card);color:var(--ink);width:100%;min-height:110px;resize:vertical}
+.cfgbar{position:sticky;bottom:0;background:var(--card);padding:12px 0 2px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;border-top:1px solid var(--line);margin-top:6px}
+code.cp{background:var(--bg2);padding:2px 6px;border-radius:6px;font-size:12px;word-break:break-all}
+@media (max-width:760px){.hist{grid-template-columns:1fr}.hl{border-right:0;border-bottom:1px solid var(--line)}.hlist{max-height:220px}}
 </style>
 </head>
 <body>
 <header>
-  <div><h1>🔥 Aquecimento de Perfis · AdsPower</h1><span class="mut" id="sub">carregando…</span></div>
-  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+  <div class="brand">
+    <div class="logo" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2c1 3.5 4 5 4 9a4 4 0 0 1-8 0c0-1.5.6-2.6 1.5-3.5C10 9 11 9 11.5 10 12 7 12 5 12 2z"/><path d="M5 15c0 3.9 3.1 7 7 7s7-3.1 7-7"/></svg></div>
+    <div><h1>Aquecimento de Perfis <span class="ver" id="ver" title="Versão do sistema">v…</span></h1><span class="mut" id="sub">carregando…</span></div>
+  </div>
+  <div class="actions">
     <span class="pill" id="status">parado</span>
     <button class="p" id="bStart">▶ Iniciar rodízio</button>
     <button id="bPause">⏸ Pausar</button>
     <button class="d" id="bStop">⏹ Parar</button>
     <a href="/api/export/visits.csv"><button>⬇ CSV</button></a>
+    <a id="hubLink" href="#" style="display:none"><button>Hub</button></a>
+    <a href="/logout"><button id="bOut" title="Sair">Sair</button></a>
   </div>
 </header>
 <main>
@@ -47,10 +137,12 @@ details summary{cursor:pointer;font-weight:600}
 
   <div class="grid two">
     <div class="card"><h2>Rodada atual</h2><div id="cycle"></div></div>
-    <div class="card"><h2>Mac · recursos</h2><div id="sys"></div><svg id="chart" viewBox="0 0 400 90" preserveAspectRatio="none"></svg><span class="mut" style="font-size:11px">CPU % (azul) · RAM disponível (verde) · últimos 12 min</span></div>
+    <div class="card"><h2>Computador · recursos</h2><div id="sys"></div><svg id="chart" viewBox="0 0 400 90" preserveAspectRatio="none"></svg><span class="mut" style="font-size:11px">CPU % (azul) · RAM disponível (verde) · últimos 12 min</span></div>
   </div>
 
   <div class="card"><h2>Navegando agora</h2><div id="active"><span class="mut">Nenhum perfil aberto.</span></div></div>
+
+  <div class="card hist"><div class="hl"><input id="hSearch" placeholder="Buscar perfil…" aria-label="Buscar perfil"><div class="hlist" id="hList"></div></div><div class="hd" id="hDet"><h2>Histórico por perfil</h2><span class="mut">Escolha um perfil na lista para ver tudo o que ele navegou.</span></div></div>
 
   <div class="grid two">
     <div class="card"><h2>Perfis (<span id="pc">0</span>)</h2><div class="scroll"><table id="tProfiles"></table></div></div>
@@ -62,11 +154,16 @@ details summary{cursor:pointer;font-weight:600}
     <div class="card"><h2>Páginas puladas · motivos</h2><div id="skips"></div><h2 style="margin-top:16px">Últimas sessões</h2><div class="scroll"><table id="tSess"></table></div></div>
   </div>
 
-  <div class="card"><details><summary>⚙ Configurações</summary><br>
-    <div class="cfg" id="cfg"></div><br>
-    <button class="p" id="bSave">Salvar</button> <button id="bTest">Testar conexão AdsPower</button> <button id="bCofre">Sincronizar páginas do Cofre</button> <span id="cfgMsg" class="mut"></span>
-  </details></div>
+  <div class="card"><h2>Cofre de Ativos · páginas do Facebook em aquecimento <span class="mut" id="cofSum"></span></h2><div class="scroll"><table id="tCofre"></table></div><p class="mut" style="margin:10px 0 0;font-size:12px">Vem da sincronização com o Cofre (só leitura). Use "Sincronizar páginas do Cofre" nas configurações para atualizar.</p></div>
+
+  <div class="card"><h2>Cadastro de sites <span class="mut" id="siteSum"></span></h2><div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px"><button id="bSites">Revalidar sites</button><select id="siteF" style="width:auto"><option value="all">Todos</option><option value="ok">Liberados</option><option value="bad">Bloqueados</option></select><input id="siteQ" placeholder="Filtrar site…" style="width:200px"><span class="mut" id="siteMsg"></span></div><div class="scroll" style="max-height:320px"><table id="tSites"></table></div><p class="mut" style="margin:10px 0 0;font-size:12px">Só os sites liberados entram na navegação. O teste é feito por HTTP; sites bloqueados aqui podem abrir no navegador, mas ficam de fora por segurança. Banners de cookies são aceitos.</p></div>
+
+  <div class="card" id="cfgCard"><h2>Configurações <span class="mut" id="cfgUser"></span></h2>
+    <div id="cfgSections"></div>
+    <div class="cfgbar"><button class="p" id="bSave">Salvar configurações</button> <button id="bTest">Testar conexão AdsPower</button> <button id="bCofre">Sincronizar páginas do Cofre</button> <span id="cfgMsg" class="mut"></span></div>
+  </div>
 </main>
+<footer><span>Aquecimento AdsPower <b id="verF"></b></span><span id="buildF"></span></footer>
 <script>
 const $=s=>document.querySelector(s);
 const fmtT=ms=>{ms=Math.max(0,ms);const s=Math.round(ms/1000);return s>=3600?`${Math.floor(s/3600)}h${String(Math.floor(s%3600/60)).padStart(2,'0')}`:`${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`};
@@ -80,13 +177,94 @@ $('#bStart').onclick=async()=>{const r=await post('/api/control',{action:S?.sche
 $('#bPause').onclick=()=>post('/api/control',{action:'pause'}).then(poll);
 $('#bStop').onclick=()=>confirm('Parar e fechar todos os perfis abertos?')&&post('/api/control',{action:'stop'}).then(poll);
 
-const CFG=[['adspower.baseUrl','URL da API','text','local'],['adspower.apiKey','API key (em branco = manter)','text','local'],['scheduler.concurrency','Perfis simultâneos','number'],['scheduler.ramp','Rampa progressiva (5→20 min em 7 dias)','bool'],['scheduler.sliceMinutes','Minutos por perfil (sem rampa)','number'],['scheduler.sliceJitterPct','Variação do tempo (±%)','number'],['scheduler.cpuMax','CPU máx. (%) p/ abrir novo','number'],['scheduler.memMinMB','RAM livre mín. (MB)','number'],['scheduler.startStaggerSec','Intervalo entre aberturas (s)','number'],['scheduler.pauseBetweenCyclesMin','Pausa entre rodadas (min)','number'],['scheduler.groupFilter','Filtrar grupos (vírgula)'],['scheduler.excludeIds','Excluir IDs (vírgula)'],['browsing.minPageSec','Tempo mín. por página (s)','number'],['browsing.maxPageSec','Tempo máx. por página (s)','number'],['browsing.searchRatio','Chance de busca (0–1)','number'],['browsing.youtubeRatio','Chance de YouTube (0–1)','number'],['browsing.facebookRatio','Chance de feed Facebook (0–1)','number'],['browsing.niche','Nicho (categorias)'],['browsing.acceptCookies','Aceitar cookies (desmarcado = só recusa)','bool'],['scheduler.adaptive','Limitar por CPU/RAM','bool'],['scheduler.headless','Modo headless','bool']];
-const get=(o,p)=>p.split('.').reduce((a,k)=>a?.[k],o);
+
+// ---------- configurações (todas na tela) ----------
+// tipos: bool | boolInv (liga = valor falso) | number | text | secret | lines | pair
+const SECTIONS=[
+ {t:'Quem aquecer',open:true,d:'Um perfil entra no rodízio se casar com qualquer opção ligada. Uma lista manual de IDs, se preenchida, vale no lugar das opções.',f:[
+  ['scheduler.scope.facebook','Perfis do Facebook','bool','Logados no Facebook ou com páginas cadastradas.'],
+  ['scheduler.scope.newProfiles','Perfis novos','bool','Criados há pouco ou que ainda não navegaram.'],
+  ['scheduler.scope.others','Demais perfis','bool','Todos os outros perfis do AdsPower.'],
+  ['scheduler.requireProxy','Aquecer perfis sem proxy','boolInv','Eles navegam pelo IP do computador. Não recomendado.'],
+  ['scheduler.newProfileDays','"Novo" = criado nos últimos (dias)','number'],
+  ['scheduler.groupFilter','Só estes grupos (vírgula; vazio = todos)','text'],
+  ['scheduler.includeIds','Lista manual de IDs (vazio = usar as opções acima)','text'],
+  ['scheduler.excludeIds','Nunca aquecer estes IDs','text']]},
+ {t:'Facebook',open:true,d:'Vale para os perfis do Facebook. Os comentários saem em nome da página.',f:[
+  ['browsing.facebookOnly','Perfis do Facebook navegam só no Facebook','bool','Sem Google, YouTube nem outros sites.'],
+  ['facebook.pagesEnabled','Aquecer as páginas do Facebook','bool','Visita a própria página cadastrada.'],
+  ['facebook.pageRatio','Chance de visitar a página (0–1)','number'],
+  ['facebook.reelRatio','Chance de assistir reels do nicho (0–1)','number'],
+  ['browsing.facebookRatio','Chance de usar o Facebook em perfis logados (0–1)','number'],
+  ['facebook.reelsPerVisit','Reels por visita (mín. e máx.)','pair'],
+  ['facebook.reelWatchSec','Segundos por reel (mín. e máx.)','pair'],
+  ['facebook.likeChance','Chance de curtir (0–1)','number'],
+  ['facebook.commentChance','Chance de comentar (0–1)','number'],
+  ['facebook.maxCommentsPerSession','Comentários por sessão (máx.)','number'],
+  ['facebook.maxCommentsPerDay','Comentários por dia, por perfil (máx.)','number'],
+  ['facebook.maxLikesPerDay','Curtidas por dia, por perfil (máx.)','number'],
+  ['facebook.comments','Comentários possíveis (um por linha)','lines'],
+  ['facebook.reelQueries','Buscas de reels (uma por linha)','lines']]},
+ {t:'Navegação geral',d:'Para perfis que navegam em sites comuns, busca e YouTube.',f:[
+  ['browsing.acceptCookies','Aceitar cookies','bool','Desligado: só recusa os banners.'],
+  ['browsing.minPageSec','Tempo mínimo por página (s)','number'],['browsing.maxPageSec','Tempo máximo por página (s)','number'],
+  ['browsing.pageTimeoutSec','Limite para carregar uma página (s)','number'],['browsing.maxInternalClicks','Cliques internos por site (máx.)','number'],
+  ['browsing.searchRatio','Chance de começar por busca (0–1)','number'],['browsing.youtubeRatio','Chance de YouTube (0–1)','number'],
+  ['browsing.niche','Nicho (categorias, vírgula)','text']]},
+ {t:'Rodízio e recursos',d:'Quantos perfis abrem e por quanto tempo.',f:[
+  ['scheduler.concurrency','Perfis simultâneos','number'],['scheduler.ramp','Rampa progressiva (dia 1 a 7)','bool','Tempo por perfil cresce a cada dia.'],
+  ['scheduler.sliceMinutes','Minutos por perfil (sem rampa)','number'],['scheduler.sliceJitterPct','Variação do tempo (±%)','number'],
+  ['scheduler.startStaggerSec','Intervalo entre aberturas (s)','number'],['scheduler.pauseBetweenCyclesMin','Pausa entre rodadas (min)','number'],
+  ['scheduler.adaptive','Limitar por CPU/RAM','bool','Não abre novos perfis se o computador estiver sobrecarregado.'],
+  ['scheduler.cpuMax','CPU máxima para abrir novo perfil (%)','number'],['scheduler.memMinMB','RAM livre mínima (MB)','number'],
+  ['scheduler.headless','Modo headless (sem janela)','bool']]},
+ {t:'Conexões',admin:true,d:'No NAS, a URL do AdsPower é a da ponte rodando no PC (tools/pc-bridge.js) e o token é o mesmo dela.',f:[
+  ['adspower.baseUrl','AdsPower · URL','text'],['adspower.apiKey','AdsPower · API key','secret'],
+  ['adspower.bridgeToken','AdsPower · token da ponte (modo NAS)','secret'],['adspower.minGapMs','AdsPower · intervalo entre chamadas (ms)','number'],
+  ['cofre.url','Cofre · URL da API','text'],['cofre.apiKey','Cofre · chave','secret'],
+  ['hub.url','Endereço do Hub (link "Voltar ao Hub")','text']]},
+ {t:'Acesso: Google e Hub',admin:true,d:'Login com Google só para os e-mails autorizados; o login único do Hub usa o mesmo segredo do Hub.',f:[
+  ['auth.googleClientId','Google · Client ID','text'],['auth.googleClientSecret','Google · Client secret','secret'],
+  ['auth.allowedEmails','E-mails autorizados (vírgula)','text'],['auth.allowedDomains','Domínios autorizados (vírgula)','text'],
+  ['auth.publicUrl','Endereço(s) público(s) deste app (vírgula)','text'],
+  ['auth.ssoSecret','Hub · SSO_SECRET (32+ caracteres)','secret'],['auth.ssoHours','Hub · validade do login (h)','number'],
+  ['auth.passwordLogin','Permitir senha local como reserva','bool','Desligue depois de testar o Google.']]},
+];
+const getp=(o,p)=>p.split('.').reduce((a,k)=>a?.[k],o);
+const setp=(o,p,v)=>{const k=p.split('.');k.slice(0,-1).reduce((a,x)=>a[x]??={},o)[k.at(-1)]=v};
 function fillCfg(c){
-  $('#cfg').innerHTML=CFG.filter(([p,l,t,loc])=>!loc||S.isLocal).map(([p,l,t])=>t==='bool'?`<label>${l}<select data-p="${p}"><option value="true" ${get(c,p)?'selected':''}>Sim</option><option value="false" ${!get(c,p)?'selected':''}>Não</option></select></label>`:`<label>${l}<input data-p="${p}" data-t="${t||'text'}" type="${t==='number'?'number':'text'}" step="any" value="${esc(get(c,p))}" ${p==='adspower.apiKey'?`placeholder="${c.adspower.hasKey?'(configurada)':''}"`:''}></label>`).join('');
+  const locked=new Set(c.locked||[]);
+  $('#cfgUser').textContent=S.user?'· '+(S.user.name&&S.user.name!==S.user.email?S.user.name+' · ':'')+S.user.email:'';
+  const fld=([p,l,t,hint])=>{
+    const lk=locked.has(p),dis=lk?'disabled':'',tag=lk?' <span class="lock">definido pelo servidor</span>':'',v=getp(c,p);
+    if(t==='bool'||t==='boolInv')return `<label class="sw"><input type="checkbox" data-p="${p}" data-t="${t}" ${dis} ${(t==='boolInv'?!v:v)?'checked':''}><span>${l}${tag}${hint?'<small>'+hint+'</small>':''}</span></label>`;
+    if(t==='lines')return `<label class="fld" style="grid-column:1/-1">${l}${tag}<textarea data-p="${p}" data-t="lines" ${dis}>${esc((v||[]).join('\n'))}</textarea></label>`;
+    if(t==='pair')return `<label class="fld">${l}${tag}<span style="display:flex;gap:6px"><input type="number" step="any" data-p="${p}" data-t="pair" data-i="0" value="${esc(v?.[0])}" ${dis}><input type="number" step="any" data-p="${p}" data-t="pair" data-i="1" value="${esc(v?.[1])}" ${dis}></span></label>`;
+    if(t==='secret')return `<label class="fld">${l}${tag}<input type="text" autocomplete="off" spellcheck="false" data-lpignore="true" data-1p-ignore data-form-type="other" style="-webkit-text-security:disc" data-p="${p}" data-t="secret" placeholder="${c.hasSecret?.[p]?'(configurado — em branco mantém)':'não configurado'}" ${dis}></label>`;
+    return `<label class="fld">${l}${tag}<input data-p="${p}" data-t="${t||'text'}" type="${t==='number'?'number':'text'}" step="any" value="${esc(v)}" ${dis}></label>`;
+  };
+  $('#cfgSections').innerHTML=SECTIONS.map(s=>{
+    if(s.admin&&!S.isLocal)return `<details class="sec"><summary>${s.t}</summary><div class="sb2"><p class="sd">Só quem entrou por Google/Hub (ou no próprio computador) pode alterar.</p></div></details>`;
+    const sw=s.f.filter(x=>x[2]==='bool'||x[2]==='boolInv'),rest=s.f.filter(x=>!(x[2]==='bool'||x[2]==='boolInv'));
+    const extra=s.t.startsWith('Acesso')?`<p class="sd">Autorize este endereço no Google Cloud (credenciais OAuth): <code class="cp">${location.origin}/auth/google/callback</code></p>`:'';
+    return `<details class="sec" ${s.open?'open':''}><summary>${s.t}</summary><div class="sb2"><p class="sd">${s.d||''}</p>${extra}<div class="row2">${sw.map(fld).join('')}</div><div class="row2">${rest.map(fld).join('')}</div></div></details>`;
+  }).join('');
 }
-$('#bSave').onclick=async()=>{const patch={};document.querySelectorAll('#cfg [data-p]').forEach(el=>{const ks=el.dataset.p.split('.');let o=patch;ks.slice(0,-1).forEach(k=>o=o[k]??={});let v=el.value;if(el.tagName==='SELECT')v=v==='true';else if(el.dataset.t==='number')v=Number(v);o[ks.at(-1)]=v});await post('/api/config',patch);$('#cfgMsg').textContent='Salvo ✓ (vale para as próximas aberturas)';};
-$('#bCofre').onclick=async()=>{$('#cfgMsg').textContent='Sincronizando…';const r=await post('/api/cofre-sync',{});$('#cfgMsg').textContent=r.ok?`✓ ${r.paginas} páginas em ${r.perfis} perfis (de ${r.total})${Object.keys(r.semPerfil).length?' · sem perfil: '+Object.entries(r.semPerfil).map(([k,v])=>`${k} (${v})`).join(', '):''}`:'✗ '+r.error;setTimeout(()=>location.reload(),4000)};
+function collectCfg(){
+  const patch={};
+  document.querySelectorAll('#cfgSections [data-p]:not(:disabled)').forEach(el=>{
+    const p=el.dataset.p,t=el.dataset.t;
+    if(t==='bool')setp(patch,p,el.checked);
+    else if(t==='boolInv')setp(patch,p,!el.checked);
+    else if(t==='number')setp(patch,p,el.value===''?undefined:Number(el.value));
+    else if(t==='lines')setp(patch,p,el.value.split('\n').map(x=>x.trim()).filter(Boolean));
+    else if(t==='pair'){const cur=getp(patch,p)||[0,0];cur[Number(el.dataset.i)]=Number(el.value);setp(patch,p,cur)}
+    else setp(patch,p,el.value);
+  });
+  return patch;
+}
+$('#bSave').onclick=async()=>{$('#cfgMsg').textContent='Salvando…';const r=await post('/api/config',collectCfg());if(r.error){$('#cfgMsg').textContent='✗ '+r.error;return}S.config=r;$('#cfgMsg').textContent='Salvo ✓ (vale para as próximas aberturas)';fillCfg(r)};
+$('#bCofre').onclick=async()=>{$('#cfgMsg').textContent='Sincronizando…';const r=await post('/api/cofre-sync',{});$('#cfgMsg').innerHTML=r.ok?`✓ ${r.paginas} páginas em ${r.perfis} perfis (de ${r.total})${Object.keys(r.semPerfil).length?' · sem perfil: '+Object.entries(r.semPerfil).map(([k,v])=>`${esc(k)} (${v})`).join(', '):''}${r.aviso?'<br><span class="warn">⚠ '+esc(r.aviso)+'</span>':''}`:'<span class="bad">✗ '+esc(r.error)+'</span>';setTimeout(()=>{if(r.ok)location.reload()},r.aviso?9000:4000)};
 $('#bTest').onclick=async()=>{$('#cfgMsg').textContent='Testando…';const r=await post('/api/test-connection',{});$('#cfgMsg').textContent=r.ok?`✓ ${r.profiles} perfis · ${Object.entries(r.countries).map(([k,v])=>`${k}: ${v}`).join(', ')}`:'✗ '+r.error};
 
 const flag_=(id,k,v)=>post('/api/profile-flags',{id,[k]:v});window.flag=flag_;window.fbPage=(id,cur)=>{const u=prompt('URL da página do Facebook deste perfil (vazio = remover):',cur);if(u!==null)post('/api/profile-flags',{id,fbPage:u.trim()}).then(()=>location.reload())};
@@ -96,7 +274,10 @@ function render(){
   const st=$('#status');st.textContent={running:'rodando',paused:'pausado',stopped:'parado',stopping:'parando…'}[s.status];st.className='pill '+s.status;
   $('#bStart').textContent=s.status==='paused'?'▶ Retomar':'▶ Iniciar rodízio';$('#bStart').disabled=s.status==='running'||s.status==='stopping';
   $('#bPause').disabled=s.status!=='running';$('#bStop').disabled=s.status==='stopped'||s.status==='stopping';
-  $('#sub').textContent=`${s.total} perfis · rodada nº ${s.cycle} · rampa 5→20 min por perfil · até ${S.config.scheduler.concurrency} simultâneos`;
+  $('#sub').textContent=`${s.total} perfis · rodada nº ${s.cycle} · ${S.config.scheduler.ramp?'rampa progressiva':S.config.scheduler.sliceMinutes+' min por perfil'} · até ${S.config.scheduler.concurrency} simultâneos`;
+  if(S.config?.hub?.url){const a=$('#hubLink');a.href=S.config.hub.url;a.style.display=''}
+  if(S.user&&S.user.method!=='senha')$('#bOut').title='Sair ('+S.user.email+')';
+  if(S.version){$('#ver').textContent='v'+S.version;$('#verF').textContent='v'+S.version;$('#buildF').textContent=S.build?'build '+S.build:'';document.title='Aquecimento AdsPower · v'+S.version}
   const nc=$('#noteCard');nc.style.display=s.note?'block':'none';nc.textContent='⚠ '+s.note;
   if(!cfgFilled){fillCfg(S.config);cfgFilled=true}
   if(R){const t=R.totals,d=R.today||{};const row=(x,pg)=>kpi('Páginas',pg)+kpi('Sessões',x.sessions)+kpi('Horas navegadas',x.totalNavHours+'h')+kpi('Taxa de páginas puladas',x.skipRate+'%')+kpi('Tempo médio / página',x.avgDwellSec+'s')+kpi('Carregamento médio',x.avgLoadSec+'s');
@@ -110,10 +291,18 @@ function render(){
   <div class="mut">👤 ${esc(a.persona?.name)} ${a.persona?.age} anos · ${esc(a.persona?.archetype)} · interesses: ${esc((a.persona?.interests||[]).join(', '))} · proxy ${esc(a.proxy)}</div>
   <div>${esc(a.phase)} <span class="mut">${esc((a.url||'').slice(0,90))}</span></div><div class="bar"><i style="width:${p}%"></i></div></div>`}).join(''):'<span class="mut">Nenhum perfil aberto.</span>';
   drawChart();
+  renderCofre();
+  if(!$("#hList").children.length)renderHList();
   // perfis
   const bp=R?.byProfile||{};const actIds=new Set(s.active.map(a=>a.profileId)),q=new Set(s.queueIds);
   $('#pc').textContent=s.profiles.length;
   $('#tProfiles').innerHTML='<tr><th>#</th><th>Perfil</th><th>País</th><th>Estado</th><th>Rampa</th><th title="Logado? (janela minimizada em vez de sem janela)">Logado</th><th>Sessões</th><th>Págs</th><th>Tempo</th><th>Última</th></tr>'+s.profiles.map(p=>{const x=bp[p.id]||{};const stt=actIds.has(p.id)?'<span class="ok">● navegando</span>':x.lastError&&Date.now()-x.lastErrorAt<36e5?`<span class="bad" title="${esc(x.lastError)}">✖ erro</span>`:q.has(p.id)?'⏳ fila':'—';return `<tr><td>${p.serial}</td><td title="${esc(p.name)} · ${esc(p.proxy)}">${esc(p.name)}</td><td>${flag(p.country)} ${esc(p.country)}</td><td>${stt}</td><td>${p.ramp.warmed?'<span class="ok">aquecido</span>':`dia ${p.ramp.day} · ${p.ramp.minutes} min`}</td><td><label title="Logado no Facebook"><input type="checkbox" style="width:auto" ${p.flags?.facebook?'checked':''} onchange="flag('${p.id}','facebook',this.checked)">FB</label> <label title="Logado no Google/YouTube"><input type="checkbox" style="width:auto" ${p.flags?.google?'checked':''} onchange="flag('${p.id}','google',this.checked)">G</label> <a href="#" title="${esc(p.flags?.fbPage||'Cadastrar URL da página do Facebook')}" onclick="fbPage('${p.id}',${esc(JSON.stringify(p.flags?.fbPage||''))});return false">${p.flags?.fbPages?.length?'📄'+p.flags.fbPages.length:p.flags?.fbPage?'📄':'＋pág'}</a></td><td>${x.sessions||0}</td><td>${x.ok||0}${x.skipped?` <span class="mut">(+${x.skipped} puladas)</span>`:''}</td><td>${fmtT(x.dwellMs||0)}</td><td>${ago(x.lastRun)}</td></tr>`}).join('');
+}
+function renderCofre(){
+  const ps=(S?.scheduler.profiles||[]).filter(p=>p.flags?.fbPages?.length);
+  const n=ps.reduce((a,p)=>a+p.flags.fbPages.length,0);
+  $('#cofSum').textContent=ps.length?`· ${n} páginas em ${ps.length} perfis`:'';
+  $('#tCofre').innerHTML='<tr><th>#</th><th>Perfil</th><th>País</th><th>Páginas</th></tr>'+(ps.map(p=>`<tr><td>${p.serial}</td><td>${esc(p.name)}</td><td>${flag(p.country)} ${esc(p.country)}</td><td style="white-space:normal">${p.flags.fbPages.map(g=>`<a href="${esc(g.url)}" target="_blank" rel="noopener">${esc(g.name)}</a>`).join(' · ')}</td></tr>`).join('')||'<tr><td colspan=4 class="mut">Nenhuma página sincronizada ainda. Configure a URL e a chave do Cofre abaixo e clique em Sincronizar.</td></tr>');
 }
 function drawChart(){
   const h=S.hist||[];if(h.length<2)return;const W=400,H=90;const x=i=>i/(h.length-1)*W;
@@ -131,7 +320,85 @@ function renderReport(){
   $('#tSess').innerHTML='<tr><th>Fim</th><th>Perfil</th><th>Persona</th><th>Dur.</th><th>Págs</th><th></th></tr>'+R.recentSessions.map(x=>`<tr><td>${new Date(x.endedAt).toLocaleTimeString()}</td><td title="${esc(x.name)}">${flag(x.country)} ${esc(x.name).slice(0,22)}</td><td>${esc(x.persona)}</td><td>${fmtT(x.endedAt-x.startedAt)}</td><td>${x.ok}/${x.pages}</td><td>${x.error?`<span class="bad" title="${esc(x.error)}">erro</span>`:x.aborted?'<span class="warn">interrompida</span>':'<span class="ok">ok</span>'}</td></tr>`).join('');
 }
 async function poll(){try{S=await api('/api/state');S.hist=await api('/api/sys-history');render()}catch{$('#sub').textContent='sem conexão com o servidor'}}
-async function pollReport(){try{R=await api('/api/report');renderReport();render()}catch{}}
+async function pollReport(){try{R=await api('/api/report');renderReport();render();loadIndex()}catch{}}
+
+// ---------- histórico por perfil (lista + detalhe agrupado por dia > sessão > página) ----------
+const H={sel:null,data:null,flt:'todas',q:'',open:new Set(),inited:new Set()};
+const dayKey=t=>new Date(t).toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'2-digit'});
+const hhmm=t=>new Date(t).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+const hhmmss=t=>new Date(t).toLocaleTimeString('pt-BR');
+const dur=ms=>fmtT(ms);
+const resBadge=v=>v.status==='ok'?'<span class="bd okk">ok</span>':v.status==='error'?'<span class="bd err" title="'+esc(v.reason)+'">erro</span>':'<span class="bd skk" title="'+esc(v.reason)+'">pulada</span>';
+let HI=[];
+function renderHList(){
+  if(!S)return;const q=H.q.toLowerCase();const m=new Map(HI.map(x=>[x.id,{id:x.id,name:x.name,serial:null,pages:x.pages,sessions:x.sessions,lastRun:x.lastRun}]));
+  for(const p of S.scheduler.profiles){const x=m.get(p.id)||{id:p.id,pages:0,sessions:0,lastRun:0};x.name=p.name;x.serial=p.serial;m.set(p.id,x)}
+  const ps=[...m.values()].filter(p=>!q||((p.name||'')+' '+p.id+' '+(p.serial??'')).toLowerCase().includes(q)).sort((a,b)=>(b.lastRun||0)-(a.lastRun||0)||String(a.name).localeCompare(String(b.name),'pt',{numeric:true}));
+  $('#hList').innerHTML=ps.map(p=>`<div class="pi ${H.sel===p.id?'on':''}" data-id="${p.id}"><b><span>${esc(p.name)}</span><span class="mut" style="font-weight:400">${p.serial!=null?'#'+p.serial:''}</span></b><small>${p.pages||0} páginas · ${p.sessions||0} sessões · ${p.lastRun?ago(p.lastRun):'nunca navegou'}</small></div>`).join('')||'<div class="pi mut">Nenhum perfil.</div>';
+}
+async function loadIndex(){try{HI=await api('/api/history-index');renderHList()}catch{}}
+async function loadHist(){
+  if(!H.sel)return;
+  try{H.data=await api('/api/history?profileId='+encodeURIComponent(H.sel));renderHDet()}catch{}
+}
+function renderHDet(){
+  const d=H.data;if(!d||d.profileId!==H.sel)return;const p=S?.scheduler.profiles.find(x=>x.id===d.profileId)||HI.find(x=>x.id===d.profileId)||{name:d.profileId};
+  const sidAt=t=>d.sessions.find(s=>t>=s.startedAt-5000&&t<=(s.endedAt||Infinity)+5000)?.id;
+  const ok=d.visits.filter(v=>v.status==='ok'),sk=d.visits.length-ok.length;
+  const dw=ok.reduce((a,v)=>a+(v.dwellMs||0),0),sessMs=d.sessions.reduce((a,s)=>a+(s.endedAt-s.startedAt),0);
+  const lk=d.actions.filter(a=>a.type==='like').length,cm=d.actions.filter(a=>a.type==='comment').length,wt=d.actions.filter(a=>a.type==='watch').length;
+  const doms={};ok.forEach(v=>doms[v.domain]=(doms[v.domain]||0)+(v.dwellMs||0));
+  const top=Object.entries(doms).sort((a,b)=>b[1]-a[1]).slice(0,8),mx=Math.max(1,...top.map(x=>x[1]));
+  const rows=[...d.visits.map(v=>({ts:v.ts,sid:v.sessionId,kind:'v',v,src:v.source||'—'})),...d.actions.filter(a=>a.type!=='watch').map(a=>({ts:a.ts,kind:'a',a,sid:a.sessionId||sidAt(a.ts),src:a.type.replace('_falhou',' (sem confirmação)')}))];
+  const srcs=['todas',...new Set(rows.map(r=>r.src))];
+  const list=rows.filter(r=>H.flt==='todas'||r.src===H.flt).sort((a,b)=>b.ts-a.ts);
+  const sess=new Map(d.sessions.map(s=>[s.id,s]));const days=new Map();
+  const put=(dk,sid,s,r)=>{if(!days.has(dk))days.set(dk,new Map());const dm=days.get(dk);if(!dm.has(sid))dm.set(sid,{s,rows:[]});if(r)dm.get(sid).rows.push(r)};
+  for(const r of list){const s=sess.get(r.sid);put(dayKey(s?s.startedAt:r.ts),r.sid||('sem-'+dayKey(r.ts)),s,r)}
+  if(H.flt==='todas')for(const s of d.sessions)put(dayKey(s.startedAt),s.id,s,null);
+  const stOf=x=>x.s?.startedAt||x.rows[0]?.ts||0;
+  const dayEntries=[...days.entries()].sort((a,b)=>Math.max(...[...b[1].values()].map(stOf))-Math.max(...[...a[1].values()].map(stOf)));
+  let body='';
+  dayEntries.forEach(([dk,dm],di)=>{
+    const sessions=[...dm.entries()].sort((a,b)=>stOf(b[1])-stOf(a[1]));
+    const dKey='d:'+dk;if(!H.inited.has(dKey)){H.inited.add(dKey);if(di===0)H.open.add(dKey)}
+    const pgs=sessions.reduce((a,[,x])=>a+x.rows.filter(r=>r.kind==='v').length,0),tm=sessions.reduce((a,[,x])=>a+x.rows.reduce((b,r)=>b+(r.kind==='v'&&r.v.status==='ok'?r.v.dwellMs||0:0),0),0);
+    const dOpen=H.open.has(dKey);
+    body+=`<tr class="tr0 ${dOpen?'op':''}" data-k="${esc(dKey)}"><td><span class="car">›</span>${esc(dk)}</td><td>${pgs} págs</td><td>${dur(tm)}</td><td>${sessions.length} sessões</td><td></td></tr>`;
+    if(!dOpen)return;
+    sessions.forEach(([sid,x],si)=>{
+      const sKey='s:'+sid;if(!H.inited.has(sKey)){H.inited.add(sKey);if(di===0&&si===0)H.open.add(sKey)}
+      const sOpen=H.open.has(sKey),vs=x.rows.filter(r=>r.kind==='v');const sm=vs.reduce((a,r)=>a+(r.v.status==='ok'?r.v.dwellMs||0:0),0);
+      const when=x.s?hhmm(x.s.startedAt)+' – '+hhmm(x.s.endedAt)+' · '+dur(x.s.endedAt-x.s.startedAt):hhmm(x.rows[0].ts);
+      const st=x.s?.error?'<span class="bd err" title="'+esc(x.s.error)+'">erro</span>':x.s?.aborted?'<span class="bd skk">interrompida</span>':'<span class="bd okk">ok</span>';
+      body+=`<tr class="tr1 ${sOpen?'op':''}" data-k="${esc(sKey)}"><td style="padding-left:26px"><span class="car">›</span>Sessão ${when}${x.s?.persona?' <span class="mut">· '+esc(x.s.persona)+'</span>':''}</td><td>${vs.length} págs</td><td>${dur(sm)}</td><td class="mut">${x.s?.error?esc(x.s.error).slice(0,40):[...new Set(vs.map(r=>r.v.domain))].slice(0,3).join(', ')}</td><td>${st}</td></tr>`;
+      if(!sOpen)return;
+      x.rows.forEach(r=>{
+        if(r.kind==='v'){const v=r.v;body+=`<tr class="tr2"><td style="padding-left:52px"><span class="mut">${hhmmss(v.ts)}</span> · <a href="${esc(v.url)}" target="_blank" rel="noopener" title="${esc(v.url)}">${esc(v.domain)}</a> <span class="mut">${esc((v.title||'').slice(0,60))}</span></td><td>${esc(v.source||'—')}</td><td>${v.status==='ok'?dur(v.dwellMs||0):'—'}</td><td>${v.loadMs?(v.loadMs/1000).toFixed(1)+'s carga':''}</td><td>${resBadge(v)}</td></tr>`}
+        else{const a=r.a;body+=`<tr class="tr2"><td style="padding-left:52px"><span class="mut">${hhmmss(a.ts)}</span> · ${a.type.startsWith('comment')?'comentário':'curtida'}${a.text?' <span class="mut">"'+esc(a.text)+'"</span>':''}${a.url?' <a href="'+esc(a.url)+'" target="_blank" rel="noopener" class="mut">ver</a>':''}</td><td>${esc(r.src)}</td><td></td><td></td><td><span class="bd act">${a.type.includes('falhou')?'sem confirmação':'feito'}</span></td></tr>`}
+      });
+    });
+  });
+  $('#hDet').innerHTML=`<h2 style="margin-bottom:4px;text-transform:none;letter-spacing:0;font-size:16px;color:var(--ink)">${esc(p.name)} <span class="mut" style="font-size:12px;font-weight:400">· ${esc(d.profileId)}${p.proxy?' · '+esc(p.proxy):''}</span></h2>${PERS[d.profileId]?`<div class="mut" style="margin-bottom:12px;font-size:12.5px">Usuário: <b style="color:var(--ink);font-weight:600">${esc(PERS[d.profileId].fullName)}</b>, ${PERS[d.profileId].age} anos · ${esc(PERS[d.profileId].trait)} · interesses: ${esc(PERS[d.profileId].interests.join(', '))}</div>`:'<div style="margin-bottom:10px"></div>'}
+  <div class="mini"><div><b>${d.visits.length}</b><span>Páginas (${sk} puladas)</span></div><div><b>${dur(dw)}</b><span>Tempo nas páginas</span></div><div><b>${d.sessions.length}</b><span>Sessões · ${dur(sessMs)}</span></div><div><b>${wt}</b><span>Reels assistidos</span></div><div><b>${lk}</b><span>Curtidas</span></div><div><b>${cm}</b><span>Comentários</span></div></div>
+  ${top.length?'<h2>Tempo por site</h2>'+top.map(([k,v])=>`<div class="sb"><span title="${esc(k)}" style="overflow:hidden;text-overflow:ellipsis">${esc(k)}</span><div class="bar"><i style="width:${Math.round(v/mx*100)}%"></i></div><span class="mut">${dur(v)}</span></div>`).join(''):''}
+  <div class="chips">${srcs.map(s=>`<button class="chip ${s===H.flt?'on':''}" data-f="${esc(s)}">${esc(s)}</button>`).join('')}</div>
+  ${list.length||d.sessions.length?'<table class="tree"><tr><th>Dia / sessão / página</th><th>Origem</th><th>Tempo</th><th>Detalhe</th><th>Resultado</th></tr>'+body+'</table>':'<span class="mut">Este perfil ainda não navegou.</span>'}`;
+}
+$('#hSearch').oninput=e=>{H.q=e.target.value;renderHList()};
+$('#hList').onclick=e=>{const r=e.target.closest('.pi');if(!r)return;H.sel=r.dataset.id;H.flt='todas';H.data=null;H.open.clear();H.inited.clear();renderHList();$('#hDet').innerHTML='<span class="mut">Carregando…</span>';loadHist()};
+$('#hDet').onclick=e=>{const c=e.target.closest('.chip');if(c){H.flt=c.dataset.f;renderHDet();return}const r=e.target.closest('[data-k]');if(r){const k=r.dataset.k;H.open.has(k)?H.open.delete(k):H.open.add(k);renderHDet()}};
+setInterval(()=>{if(H.sel)loadHist()},10000);
+
+// ---------- cadastro de sites ----------
+let SITES=[],PERS={};
+async function loadSites(){try{const j=await api('/api/sites');SITES=j.sites;const ok=SITES.filter(s=>s.ok).length;$('#siteSum').textContent=SITES.length?'· '+ok+' liberados · '+(SITES.length-ok)+' bloqueados':'';$('#siteMsg').textContent=j.checking?'Testando… '+j.checking.done+'/'+j.checking.total:'';renderSites()}catch{}}
+function renderSites(){const f=$('#siteF').value,q=$('#siteQ').value.toLowerCase();
+  $('#tSites').innerHTML='<tr><th>Site</th><th>Categorias</th><th>Estado</th><th>Tempo</th><th>Cookies</th><th>Testado</th></tr>'+SITES.filter(s=>(f==='all'||(f==='ok')===!!s.ok)&&(!q||s.domain.includes(q))).sort((a,b)=>(a.ok-b.ok)||a.domain.localeCompare(b.domain)).map(s=>'<tr><td>'+esc(s.domain)+'</td><td class="mut">'+esc((s.categories||[]).join(', '))+'</td><td>'+(s.ok?'<span class="bd okk">liberado</span>':'<span class="bd err">'+esc(s.reason||'bloqueado')+'</span>')+'</td><td>'+(s.ms?(s.ms/1000).toFixed(1)+'s':'—')+'</td><td>'+(s.cookies?'aceita':'—')+'</td><td class="mut">'+ago(s.checkedAt)+'</td></tr>').join('')}
+$('#siteF').onchange=renderSites;$('#siteQ').oninput=renderSites;
+$('#bSites').onclick=async()=>{$('#siteMsg').textContent='Iniciando…';await post('/api/sites-check',{});const t=setInterval(async()=>{await loadSites();if(!$('#siteMsg').textContent.startsWith('Testando')){clearInterval(t);$('#siteMsg').textContent='Concluído ✓'}},2500)};
+api('/api/personas').then(p=>{PERS=p}).catch(()=>{});
+loadSites();
 poll();pollReport();setInterval(poll,2000);setInterval(pollReport,5000);
 </script>
 </body>

@@ -1,6 +1,6 @@
 {
   "name": "aquecimento-adspower",
-  "version": "1.0.0",
+  "version": "1.2.4",
   "description": "Aquecimento automático de perfis do AdsPower com personas, rodízio e dashboard",
   "type": "module",
   "scripts": {
@@ -8,7 +8,13 @@
     "bench": "node scripts/bench.js",
     "mock": "node test/mock-adspower.js",
     "report": "node scripts/report.js",
-    "fb-report": "node scripts/fb-report.js"
+    "fb-report": "node scripts/fb-report.js",
+    "check-sites": "node scripts/check-sites.js",
+    "gen-personas": "node scripts/gen-personas.js",
+    "test:auth": "node scripts/test-auth.mjs",
+    "test:bridge": "node scripts/test-bridge.mjs",
+    "test:e2e": "node scripts/test-e2e.mjs",
+    "bridge": "node tools/pc-bridge.js"
   },
   "dependencies": {
     "express": "^4.21.2",

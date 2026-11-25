@@ -1,0 +1,43 @@
+services:
+  aquecimento:
+    build: .
+    container_name: jrh_adspower
+    restart: unless-stopped
+    init: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: 512m
+    environment:
+      - TZ=America/Sao_Paulo
+      - HOST=0.0.0.0
+      - PORT=4747
+      # Endereço(s) público(s) (HTTPS): túnel Cloudflare e Nginx Proxy Manager. Vários: separe por vírgula.
+      - PUBLIC_URL=${PUBLIC_URL:-https://aquecimento.nas2800.com,https://aquecimento.nas2800.duckdns.org}
+      # Login Google (mesmo app OAuth do Hub, Cofre e Stock) e quem pode entrar.
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-}
+      - ALLOWED_EMAILS=${ALLOWED_EMAILS:-}
+      - ALLOWED_DOMAINS=${ALLOWED_DOMAINS:-}
+      # Login único com o Hub: o MESMO SSO_SECRET (32+ caracteres) do .env do Hub.
+      - SSO_SECRET=${SSO_SECRET:-}
+      - HUB_URL=${HUB_URL:-https://hub.nas2800.com}
+      # AdsPower no PC, pela ponte (tools/pc-bridge.js): URL e token da ponte.
+      - ADSPOWER_URL=${ADSPOWER_URL:-}
+      - ADSPOWER_BRIDGE_TOKEN=${ADSPOWER_BRIDGE_TOKEN:-}
+      - ADSPOWER_API_KEY=${ADSPOWER_API_KEY:-}
+      # Cofre de Ativos (só leitura).
+      - COFRE_URL=${COFRE_URL:-https://ativos.nas2800.com}
+      - COFRE_API_KEY=${COFRE_API_KEY:-}
+      # 0 = só Google/Hub (recomendado depois de testar). Vazio = o que estiver na tela.
+      - PASSWORD_LOGIN=${PASSWORD_LOGIN:-}
+    ports:
+      - "4747:4747"
+    volumes:
+      # Configurações, histórico, personas e cadastro de sites ficam aqui (sobrevivem a atualizações).
+      - /volume2/docker/jrh_digital/jrh_adspower/data:/data
+      # Código montado de fora (como no Hub, Cofre e Stock): para atualizar, copie os arquivos e RECRIE a stack,
+      # sem precisar reconstruir a imagem. Só mudança em dependências (package-lock.json) exige --build.
+      - /volume2/docker/jrh_digital/jrh_adspower/src:/app/src:ro
+      - /volume2/docker/jrh_digital/jrh_adspower/public:/app/public:ro
+      - /volume2/docker/jrh_digital/jrh_adspower/tools:/app/tools:ro
+      - /volume2/docker/jrh_digital/jrh_adspower/package.json:/app/package.json:ro
