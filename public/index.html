@@ -64,7 +64,7 @@ details summary{cursor:pointer;font-weight:600}
 
   <div class="card"><details><summary>⚙ Configurações</summary><br>
     <div class="cfg" id="cfg"></div><br>
-    <button class="p" id="bSave">Salvar</button> <button id="bTest">Testar conexão AdsPower</button> <span id="cfgMsg" class="mut"></span>
+    <button class="p" id="bSave">Salvar</button> <button id="bTest">Testar conexão AdsPower</button> <button id="bCofre">Sincronizar páginas do Cofre</button> <span id="cfgMsg" class="mut"></span>
   </details></div>
 </main>
 <script>
@@ -86,9 +86,10 @@ function fillCfg(c){
   $('#cfg').innerHTML=CFG.filter(([p,l,t,loc])=>!loc||S.isLocal).map(([p,l,t])=>t==='bool'?`<label>${l}<select data-p="${p}"><option value="true" ${get(c,p)?'selected':''}>Sim</option><option value="false" ${!get(c,p)?'selected':''}>Não</option></select></label>`:`<label>${l}<input data-p="${p}" data-t="${t||'text'}" type="${t==='number'?'number':'text'}" step="any" value="${esc(get(c,p))}" ${p==='adspower.apiKey'?`placeholder="${c.adspower.hasKey?'(configurada)':''}"`:''}></label>`).join('');
 }
 $('#bSave').onclick=async()=>{const patch={};document.querySelectorAll('#cfg [data-p]').forEach(el=>{const ks=el.dataset.p.split('.');let o=patch;ks.slice(0,-1).forEach(k=>o=o[k]??={});let v=el.value;if(el.tagName==='SELECT')v=v==='true';else if(el.dataset.t==='number')v=Number(v);o[ks.at(-1)]=v});await post('/api/config',patch);$('#cfgMsg').textContent='Salvo ✓ (vale para as próximas aberturas)';};
+$('#bCofre').onclick=async()=>{$('#cfgMsg').textContent='Sincronizando…';const r=await post('/api/cofre-sync',{});$('#cfgMsg').textContent=r.ok?`✓ ${r.paginas} páginas em ${r.perfis} perfis (de ${r.total})${Object.keys(r.semPerfil).length?' · sem perfil: '+Object.entries(r.semPerfil).map(([k,v])=>`${k} (${v})`).join(', '):''}`:'✗ '+r.error;setTimeout(()=>location.reload(),4000)};
 $('#bTest').onclick=async()=>{$('#cfgMsg').textContent='Testando…';const r=await post('/api/test-connection',{});$('#cfgMsg').textContent=r.ok?`✓ ${r.profiles} perfis · ${Object.entries(r.countries).map(([k,v])=>`${k}: ${v}`).join(', ')}`:'✗ '+r.error};
 
-const flag_=(id,k,v)=>post('/api/profile-flags',{id,[k]:v});window.flag=flag_;
+const flag_=(id,k,v)=>post('/api/profile-flags',{id,[k]:v});window.flag=flag_;window.fbPage=(id,cur)=>{const u=prompt('URL da página do Facebook deste perfil (vazio = remover):',cur);if(u!==null)post('/api/profile-flags',{id,fbPage:u.trim()}).then(()=>location.reload())};
 function kpi(l,v,x=''){return `<div class="card kpi"><b>${v}</b><span>${l}${x}</span></div>`}
 function render(){
   if(!S)return;const s=S.scheduler,sys=S.sys;
@@ -112,7 +113,7 @@ function render(){
   // perfis
   const bp=R?.byProfile||{};const actIds=new Set(s.active.map(a=>a.profileId)),q=new Set(s.queueIds);
   $('#pc').textContent=s.profiles.length;
-  $('#tProfiles').innerHTML='<tr><th>#</th><th>Perfil</th><th>País</th><th>Estado</th><th>Rampa</th><th title="Logado? (janela minimizada em vez de sem janela)">Logado</th><th>Sessões</th><th>Págs</th><th>Tempo</th><th>Última</th></tr>'+s.profiles.map(p=>{const x=bp[p.id]||{};const stt=actIds.has(p.id)?'<span class="ok">● navegando</span>':x.lastError&&Date.now()-x.lastErrorAt<36e5?`<span class="bad" title="${esc(x.lastError)}">✖ erro</span>`:q.has(p.id)?'⏳ fila':'—';return `<tr><td>${p.serial}</td><td title="${esc(p.name)} · ${esc(p.proxy)}">${esc(p.name)}</td><td>${flag(p.country)} ${esc(p.country)}</td><td>${stt}</td><td>${p.ramp.warmed?'<span class="ok">aquecido</span>':`dia ${p.ramp.day} · ${p.ramp.minutes} min`}</td><td><label title="Logado no Facebook"><input type="checkbox" style="width:auto" ${p.flags?.facebook?'checked':''} onchange="flag('${p.id}','facebook',this.checked)">FB</label> <label title="Logado no Google/YouTube"><input type="checkbox" style="width:auto" ${p.flags?.google?'checked':''} onchange="flag('${p.id}','google',this.checked)">G</label></td><td>${x.sessions||0}</td><td>${x.ok||0}${x.skipped?` <span class="mut">(+${x.skipped} puladas)</span>`:''}</td><td>${fmtT(x.dwellMs||0)}</td><td>${ago(x.lastRun)}</td></tr>`}).join('');
+  $('#tProfiles').innerHTML='<tr><th>#</th><th>Perfil</th><th>País</th><th>Estado</th><th>Rampa</th><th title="Logado? (janela minimizada em vez de sem janela)">Logado</th><th>Sessões</th><th>Págs</th><th>Tempo</th><th>Última</th></tr>'+s.profiles.map(p=>{const x=bp[p.id]||{};const stt=actIds.has(p.id)?'<span class="ok">● navegando</span>':x.lastError&&Date.now()-x.lastErrorAt<36e5?`<span class="bad" title="${esc(x.lastError)}">✖ erro</span>`:q.has(p.id)?'⏳ fila':'—';return `<tr><td>${p.serial}</td><td title="${esc(p.name)} · ${esc(p.proxy)}">${esc(p.name)}</td><td>${flag(p.country)} ${esc(p.country)}</td><td>${stt}</td><td>${p.ramp.warmed?'<span class="ok">aquecido</span>':`dia ${p.ramp.day} · ${p.ramp.minutes} min`}</td><td><label title="Logado no Facebook"><input type="checkbox" style="width:auto" ${p.flags?.facebook?'checked':''} onchange="flag('${p.id}','facebook',this.checked)">FB</label> <label title="Logado no Google/YouTube"><input type="checkbox" style="width:auto" ${p.flags?.google?'checked':''} onchange="flag('${p.id}','google',this.checked)">G</label> <a href="#" title="${esc(p.flags?.fbPage||'Cadastrar URL da página do Facebook')}" onclick="fbPage('${p.id}',${esc(JSON.stringify(p.flags?.fbPage||''))});return false">${p.flags?.fbPages?.length?'📄'+p.flags.fbPages.length:p.flags?.fbPage?'📄':'＋pág'}</a></td><td>${x.sessions||0}</td><td>${x.ok||0}${x.skipped?` <span class="mut">(+${x.skipped} puladas)</span>`:''}</td><td>${fmtT(x.dwellMs||0)}</td><td>${ago(x.lastRun)}</td></tr>`}).join('');
 }
 function drawChart(){
   const h=S.hist||[];if(h.length<2)return;const W=400,H=90;const x=i=>i/(h.length-1)*W;

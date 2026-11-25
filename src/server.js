@@ -1,3 +1,4 @@
+import { syncCofre } from './cofre.js';
 import express from 'express';
 import path from 'node:path';
 import os from 'node:os';
@@ -100,13 +101,24 @@ app.post('/api/config', (req, res) => {
 });
 
 app.post('/api/profile-flags', (req, res) => {
-  const { id, facebook, google } = req.body || {};
+  const { id, facebook, google, fbPage } = req.body || {};
   if (!scheduler.profiles.some((p) => p.id === id)) return res.status(404).json({ error: 'perfil desconhecido' });
   const f = {};
   if (typeof facebook === 'boolean') f.facebook = facebook;
   if (typeof google === 'boolean') f.google = google;
+  if (typeof fbPage === 'string') f.fbPage = /^https:\/\/(www\.|m\.|web\.)?facebook\.com\//.test(fbPage.trim()) ? fbPage.trim() : '';
   store.setFlags(id, f);
   res.json(store.flags(id));
+});
+
+app.post('/api/cofre-sync', async (_req, res) => {
+  try {
+    const profiles = scheduler.profiles.length ? scheduler.profiles : await scheduler.loadProfiles();
+    const r = await syncCofre(profiles);
+    for (const p of profiles) if (store.flags(p.id).fbPages) store.setFlags(p.id, { fbPages: [] }); // limpa as de sincronizações anteriores
+    for (const { profile, pages } of r.byProfile.values()) store.setFlags(profile.id, { fbPages: pages });
+    res.json({ ok: true, total: r.total, perfis: r.byProfile.size, paginas: [...r.byProfile.values()].reduce((n, x) => n + x.pages.length, 0), semPerfil: r.unmatched });
+  } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
 app.post('/api/test-connection', async (_req, res) => {

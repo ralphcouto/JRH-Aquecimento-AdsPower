@@ -37,9 +37,23 @@ export const defaults = {
     maxInternalClicks: 3,
     searchRatio: 0.3, // chance de iniciar por busca no Google
     youtubeRatio: 0.3,
+    facebookOnly: false, // true = perfis marcados FB só navegam no Facebook
     facebookRatio: 0.2, // só em perfis marcados como logados no Facebook
     acceptCookies: true, // true = aceita cookies; false = só recusa
     niche: 'spirituality,health,fitness', // categorias principais das personas
+  },
+  facebook: {
+    pageRatio: 0.25, // chance de visitar a própria página (se cadastrada)
+    reelRatio: 0.45, // chance de buscar reels do nicho (o resto = feed)
+    reelsPerVisit: [3, 6],
+    reelWatchSec: [15, 60],
+    likeChance: 0.35, // curtida simples por reel assistido
+    commentChance: 0.12, // chance de comentar um reel assistido
+    maxCommentsPerSession: 2,
+    maxCommentsPerDay: 8, // por perfil
+    maxLikesPerDay: 40, // por perfil
+    comments: ['Needed this today 🙏', 'Love this energy ✨', 'Yes! Thank you for sharing 💫', 'This is so true 🙌', 'Beautiful reminder ❤️', 'Saving this one 🙏', 'I really needed to hear this today', 'Gratitude 🙏✨', 'Such a powerful message', 'This just made my day 😊', 'Amen to that 🙌', 'Love this so much ❤️', 'Exactly what I needed right now', 'Thank you for this 🙏', 'So inspiring ✨', 'Manifesting this 🙌', 'Feeling this deeply 💛', 'Good vibes only ✨', 'Perfect timing for this message 🙏', 'Beautiful 💫', 'Needed that reminder, thank you', 'This resonates so much', 'Receiving this 🙏✨', 'Wow, just what I needed 💛', 'Sending love and light ✨', 'Yes yes yes 🙌', 'So grateful for this ❤️', 'Powerful words 🙏', 'I believe in this 💫', 'Thank you for the reminder 🙏'],
+    reelQueries: ['manifestation', 'manifestation tips', 'law of attraction', 'manifest your dream life', 'manifesting abundance', 'affirmations for manifestation', '369 method manifestation', 'vision board manifestation', 'manifestation journaling', 'attract what you want', 'wealth manifestation', 'money affirmations', 'abundance mindset', 'prosperity mindset', 'attract money', 'wealth frequency', 'financial abundance affirmations', 'rich mindset', 'prosperity affirmations', 'money manifestation'],
   },
   dashboard: { port: 4747, host: '0.0.0.0', password: '' }, // só aceita IPs de rede local
 };
@@ -72,5 +86,6 @@ export function maskedConfig() {
   c.adspower.hasKey = !!cfg.adspower.apiKey;
   c.adspower.apiKey = ''; // a chave nunca vai para o navegador
   delete c.dashboard.password;
+  if (c.cofre) { c.cofre.hasKey = !!c.cofre.apiKey; c.cofre.apiKey = ''; }
   return c;
 }

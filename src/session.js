@@ -5,6 +5,7 @@ import { getConfig } from './config.js';
 import { store } from './store.js';
 import { buildPersona, publicPersona } from './persona.js';
 import { countryInfo, sitesFor, queriesFor } from './sites.js';
+import { logAction, countSince, usedComments } from './fbstats.js';
 import { rand, randInt, sleep, moveMouse, wander, readPage, typeLike, inspectPage, pickInternalLink, domainOf, tryConsent } from './human.js';
 
 const pickOne = (a) => a[Math.floor(Math.random() * a.length)];
@@ -33,10 +34,22 @@ export async function runSession({ profile, sliceMs, signal, live }) {
   let browser, error = null;
 
   try {
-    const { ws } = await ads.start(profile.id, { headless });
-    if (!ws) throw new Error('AdsPower não devolveu endpoint de automação');
-    live.phase = 'conectando';
-    browser = await chromium.connectOverCDP(ws, { timeout: 45000 });
+    // ECONNREFUSED = o AdsPower devolveu uma porta já morta (perfil ainda fechando da sessão anterior): fecha, espera e abre de novo
+    for (let attempt = 1; ; attempt++) {
+      const { ws } = await ads.start(profile.id, { headless });
+      if (!ws) throw new Error('AdsPower não devolveu endpoint de automação');
+      live.phase = attempt > 1 ? `conectando (tentativa ${attempt})` : 'conectando';
+      await sleep(attempt === 1 ? 1500 : 4000, signal); // dá tempo do navegador abrir a porta
+      try {
+        browser = await chromium.connectOverCDP(ws, { timeout: 45000 });
+        break;
+      } catch (e) {
+        if (attempt >= 3 || signal.aborted || !/ECONNREFUSED|WebSocket error|Target closed|closed/i.test(e.message)) throw e;
+        live.phase = 'reabrindo perfil';
+        try { await ads.stop(profile.id); } catch {}
+        await sleep(5000 * attempt, signal);
+      }
+    }
     const context = browser.contexts()[0] || (await browser.newContext());
     const pages = context.pages();
     S.page = pages[0] || (await context.newPage());
@@ -53,14 +66,16 @@ export async function runSession({ profile, sliceMs, signal, live }) {
         live.country = c; live.persona = publicPersona(persona);
       }
     }
-    if (!headless) await minimizeWindow(context, S.page);
+    if (!headless && !flags.facebook) await minimizeWindow(context, S.page); // no Facebook a janela fica aberta: minimizada, cliques e vídeo falham
 
     while (Date.now() < S.deadline - 6000 && !signal.aborted) {
       const r = Math.random();
       const b = cfg.browsing;
       try {
         let done = false;
-        const fb = flags.facebook ? b.facebookRatio : 0;
+        const fbOnly = flags.facebook && b.facebookOnly; // perfis do Facebook: nada de Google/YouTube/sites
+        const fb = fbOnly ? 1 : flags.facebook ? b.facebookRatio : 0;
+        if (fbOnly) { if (!(await stepFacebook(S))) await sleep(rand(8000, 20000), signal); continue; }
         if (r < fb) done = await stepFacebook(S);
         else if (r < fb + b.youtubeRatio) done = await stepYoutube(S);
         else if (r < fb + b.youtubeRatio + Math.max(0.05, b.searchRatio + persona.searchBias)) done = await stepSearch(S);
@@ -302,14 +317,167 @@ async function minimizeWindow(context, page) {
   } catch {}
 }
 
-/** Feed do Facebook (só perfis marcados como logados): rolagem passiva, sem curtir/comentar/seguir. */
+/** Facebook (só perfis marcados como logados): feed, página própria e busca de reels do nicho, com curtidas leves. */
 async function stepFacebook(S) {
   if (struck(S, 'facebook.com')) return false;
+  const fb = getConfig().facebook;
+  const own = S.flags.fbPages?.length ? pickOne(S.flags.fbPages).url : S.flags.fbPage;
+  const r = Math.random();
+  if (own && r < fb.pageRatio) return fbOwnPage(S, own);
+  if (r < fb.pageRatio + fb.reelRatio) return fbReels(S, fb);
   const meta = { source: 'facebook', category: 'social' };
   const nav = await navigate(S, 'https://www.facebook.com/', meta);
   if (!nav) return false;
   await engage(S, nav, meta, 0);
   return true;
+}
+
+/** Visita a própria página (rolagem passiva, como o admin conferindo a página). */
+async function fbOwnPage(S, url) {
+  const meta = { source: 'facebook-pagina', category: 'social' };
+  const nav = await navigate(S, url, meta);
+  if (!nav) return false;
+  await engage(S, nav, meta, 0);
+  return true;
+}
+
+/** Busca reels do nicho (inglês) e age como usuário comum: assiste sem pressa, às vezes curte, raramente comenta. */
+async function fbReels(S, fb) {
+  const { page } = S;
+  const DAY = 24 * 3600 * 1000;
+  const pid = S.profile.id;
+  const query = pickOne(fb.reelQueries);
+  const meta = { source: 'facebook-reels', category: 'spirituality' };
+  S.live.phase = `Facebook reels: ${query}`;
+  const nav = await navigate(S, `https://www.facebook.com/search/videos/?q=${encodeURIComponent(query)}`, meta);
+  if (!nav) return false;
+  await readPage(page, rand(3000, 7000), S.persona, S.signal);
+  const target = await page.evaluate(() => {
+    const as = [...document.querySelectorAll('a[href*="/reel/"], a[href*="/watch/?v="], a[href*="/videos/"]')].slice(0, 8);
+    if (!as.length) return null;
+    const a = as[Math.floor(Math.random() * as.length)];
+    a.scrollIntoView({ block: 'center' });
+    const r = a.getBoundingClientRect();
+    return { x: r.left + r.width / 2, y: r.top + Math.min(r.height / 2, 80) };
+  }).catch(() => null);
+  if (!target) { strike(S, 'facebook.com'); return false; }
+  await moveMouse(page, target.x, target.y);
+  await sleep(rand(400, 1200), S.signal);
+  await page.mouse.click(target.x, target.y);
+  await page.waitForLoadState('domcontentloaded', { timeout: 20000 }).catch(() => {});
+  await sleep(rand(3000, 5000), S.signal);
+
+  S.commentsDone ||= 0;
+  const reels = randInt(fb.reelsPerVisit[0], fb.reelsPerVisit[1]);
+  for (let i = 0; i < reels && S.deadline - Date.now() > 15000 && !S.signal.aborted; i++) {
+    await page.evaluate(() => document.querySelectorAll('video').forEach((m) => { m.muted = true; })).catch(() => {});
+    // às vezes o usuário "pula" um reel logo no começo
+    const skip = Math.random() < 0.18;
+    const watch = Math.min((skip ? rand(3, 7) : rand(fb.reelWatchSec[0], fb.reelWatchSec[1])) * 1000 * S.persona.pace, S.deadline - Date.now() - 6000);
+    if (watch < 3000) break;
+    S.live.phase = `assistindo reel ${i + 1}/${reels}`;
+    const reelUrl = page.url();
+    const tw = Date.now();
+    while (Date.now() - tw < watch && !S.signal.aborted) {
+      if (Math.random() < 0.2) await wander(page).catch(() => {});
+      await sleep(rand(2000, 4500), S.signal);
+    }
+    const watched = Date.now() - tw;
+    logAction({ type: 'watch', profileId: pid, name: S.profile.name, url: reelUrl.slice(0, 200), query, ms: watched, skipped: skip });
+    let liked = false, commented = null;
+    if (!skip && watched > 8000) {
+      if (Math.random() < fb.likeChance && countSince(pid, 'like', Date.now() - DAY) < fb.maxLikesPerDay) liked = await fbLike(S, reelUrl);
+      if (Math.random() < fb.commentChance && S.commentsDone < fb.maxCommentsPerSession && countSince(pid, 'comment', Date.now() - DAY) < fb.maxCommentsPerDay) {
+        commented = await fbComment(S, fb, reelUrl);
+        if (commented) S.commentsDone++;
+      }
+    }
+    record(S, { url: reelUrl, title: query, ...meta, status: 'ok', loadMs: nav.loadMs, dwellMs: watched, scrollPx: 0, action: [liked && 'like', commented && 'comment'].filter(Boolean).join('+') || undefined });
+    if (i < reels - 1) {
+      await sleep(rand(1500, 4000), S.signal);
+      await page.keyboard.press('ArrowDown').catch(() => {});
+      await sleep(rand(2000, 3500), S.signal);
+    }
+  }
+  return true;
+}
+
+const LIKE_SEL = '[role="button"][aria-label^="Curtir,"], [role="button"][aria-label^="Like,"]';
+const LIKED_SEL = '[role="button"][aria-label^="Remover Curtir"], [role="button"][aria-label^="Remove Like"], [role="button"][aria-label^="Unlike"]';
+const COMMENT_BTN_SEL = '[role="button"][aria-label^="Comentário,"], [role="button"][aria-label^="Comment,"], [role="button"][aria-label^="Comentar"]';
+const TEXTBOX_SEL = '[role="textbox"][aria-label^="Comente"], [role="textbox"][aria-label^="Comment as"], [role="textbox"][aria-label^="Write a comment"], [role="textbox"][aria-label^="Escreva"]';
+
+/** Primeiro elemento do seletor que está dentro da janela visível (o reel atual). */
+async function firstInView(page, sel) {
+  const loc = page.locator(sel);
+  const n = Math.min(await loc.count().catch(() => 0), 8);
+  const vh = page.viewportSize()?.height || (await page.evaluate(() => innerHeight).catch(() => 800));
+  for (let i = 0; i < n; i++) {
+    const el = loc.nth(i);
+    const b = await el.boundingBox({ timeout: 800 }).catch(() => null);
+    if (b && b.y >= 0 && b.y + b.height <= vh && b.width > 0) return { el, box: b };
+  }
+  return null;
+}
+
+/** Curtida simples. Só conta se o rótulo do botão mudar para "Remover Curtir". */
+async function fbLike(S, url) {
+  const page = S.page;
+  const base = { profileId: S.profile.id, name: S.profile.name, url: url.slice(0, 200) };
+  try {
+    const f = await firstInView(S.page, LIKE_SEL);
+    if (!f) { logAction({ type: 'like_falhou', ...base, motivo: 'botao_nao_achado' }); return false; }
+    await moveMouse(S.page, f.box.x + f.box.width / 2, f.box.y + f.box.height / 2);
+    await sleep(rand(400, 1100), S.signal);
+    await S.page.mouse.click(f.box.x + f.box.width / 2, f.box.y + f.box.height / 2);
+    await sleep(rand(1200, 2200), S.signal);
+    // depois de curtir o rótulo vira "Remover Curtir": procura esse botão (na mesma altura do clique)
+    const lk = page.locator(LIKED_SEL);
+    let ok = false;
+    for (let i = 0, n = Math.min(await lk.count().catch(() => 0), 8); i < n && !ok; i++) {
+      const b = await lk.nth(i).boundingBox({ timeout: 800 }).catch(() => null);
+      if (b && Math.abs(b.y - f.box.y) < 40 && Math.abs(b.x - f.box.x) < 40) ok = true;
+    }
+    logAction({ type: ok ? 'like' : 'like_falhou', ...base, ...(ok ? {} : { motivo: 'sem_confirmacao' }) });
+    return ok;
+  } catch (e) { logAction({ type: 'like_falhou', ...base, motivo: shortErr(e) }); return false; }
+}
+
+/** Comentário curto e positivo; sem links, sem repetir texto no mesmo perfil em 24h. Só conta se aparecer na tela. */
+async function fbComment(S, fb, url) {
+  const pid = S.profile.id, base = { profileId: pid, name: S.profile.name, url: url.slice(0, 200) };
+  const used = usedComments(pid, Date.now() - 24 * 3600 * 1000);
+  const pool = fb.comments.filter((c) => !used.has(c));
+  if (!pool.length) return null;
+  const text = pickOne(pool);
+  const { page } = S;
+  try {
+    S.live.phase = 'comentando';
+    let tb = await firstInView(page, TEXTBOX_SEL);
+    if (!tb) {
+      const cb = await firstInView(page, COMMENT_BTN_SEL);
+      if (!cb) throw new Error('botao_comentar_nao_achado');
+      await moveMouse(page, cb.box.x + cb.box.width / 2, cb.box.y + cb.box.height / 2);
+      await sleep(rand(300, 800), S.signal);
+      await page.mouse.click(cb.box.x + cb.box.width / 2, cb.box.y + cb.box.height / 2);
+      await sleep(rand(1800, 3000), S.signal);
+      tb = await firstInView(page, TEXTBOX_SEL) || { el: page.locator(TEXTBOX_SEL).first(), box: await page.locator(TEXTBOX_SEL).first().boundingBox({ timeout: 2000 }).catch(() => null) };
+    }
+    if (!tb?.box) throw new Error('campo_nao_achado');
+    await moveMouse(page, tb.box.x + tb.box.width / 2, tb.box.y + tb.box.height / 2);
+    await page.mouse.click(tb.box.x + tb.box.width / 2, tb.box.y + tb.box.height / 2);
+    await sleep(rand(600, 1400), S.signal);
+    await typeLike(page, text, S.signal);
+    await sleep(rand(800, 2000), S.signal);
+    await page.keyboard.press('Enter');
+    await sleep(rand(2500, 4000), S.signal);
+    // enviado = campo vazio de novo e o texto aparece na lista de comentários
+    const still = await tb.el.innerText({ timeout: 1000 }).catch(() => '');
+    const shown = await page.getByText(text, { exact: false }).count().catch(() => 0);
+    if (shown > 0 && !still.includes(text)) { logAction({ type: 'comment', ...base, text }); return text; }
+    logAction({ type: 'comment_falhou', ...base, text, motivo: 'sem_confirmacao' });
+    return null;
+  } catch (e) { logAction({ type: 'comment_falhou', ...base, text, motivo: shortErr(e) }); return null; }
 }
 
 async function detectCountry(page) {
